@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getTrackById, deleteTrack, type Track } from "@/lib/tracks";
+import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import Header from "@/app/components/Header";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -16,26 +16,48 @@ const STATUS_COLORS: Record<string, string> = {
 export default function TrackDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [track, setTrack] = useState<Track | null | undefined>(undefined);
+  const [track, setTrack]           = useState<Track | null | undefined>(undefined);
+  const [error, setError]           = useState<string | null>(null);
+  const [deleting, setDeleting]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    setTrack(getTrackById(id) ?? null);
+    getTrackById(id)
+      .then((t) => setTrack(t))
+      .catch((e: Error) => {
+        setError(e.message);
+        setTrack(null);
+      });
   }, [id]);
 
-  function handleDelete() {
-    deleteTrack(id);
-    router.push("/library");
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await deleteTrack(id);
+      router.push("/library");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete track.");
+      setDeleting(false);
+    }
   }
 
-  if (track === undefined) return null;
+  if (track === undefined) {
+    return (
+      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-white/30 text-sm">Loading…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (track === null) {
     return (
       <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
         <Header />
         <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center px-4">
-          <p className="text-white/40">Track not found.</p>
+          <p className="text-white/40">{error ?? "Track not found."}</p>
           <Link href="/library" className="text-sm text-white hover:text-white/70 transition-colors underline">
             Back to Library
           </Link>
@@ -60,6 +82,11 @@ export default function TrackDetailPage() {
           >
             ← Library
           </Link>
+
+          {/* Error */}
+          {error && (
+            <p className="mb-6 text-sm text-red-400 text-center">{error}</p>
+          )}
 
           {/* Title block */}
           <div className="flex items-start justify-between gap-4 mb-8">
@@ -125,13 +152,15 @@ export default function TrackDetailPage() {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium"
+                  disabled={deleting}
+                  className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium disabled:opacity-50"
                 >
-                  Yes, delete
+                  {deleting ? "Deleting…" : "Yes, delete"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
                   className="text-sm text-white/30 hover:text-white/60 transition-colors"
                 >
                   Cancel

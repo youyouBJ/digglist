@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getTracks, deleteTrack, type Track } from "@/lib/tracks";
+import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import Header from "@/app/components/Header";
 
 const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
@@ -16,13 +16,20 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function LibraryPage() {
-  const [tracks, setTracks]             = useState<Track[]>([]);
-  const [search, setSearch]             = useState("");
-  const [platformFilter, setPlatform]   = useState("");
-  const [statusFilter, setStatus]       = useState("");
-  const [confirmId, setConfirmId]       = useState<string | null>(null);
+  const [tracks, setTracks]           = useState<Track[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
+  const [search, setSearch]           = useState("");
+  const [platformFilter, setPlatform] = useState("");
+  const [statusFilter, setStatus]     = useState("");
+  const [confirmId, setConfirmId]     = useState<string | null>(null);
 
-  useEffect(() => { setTracks(getTracks()); }, []);
+  useEffect(() => {
+    getTracks()
+      .then(setTracks)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const hasFilters = search !== "" || platformFilter !== "" || statusFilter !== "";
 
@@ -42,10 +49,14 @@ export default function LibraryPage() {
     return true;
   });
 
-  function handleDelete(id: string) {
-    deleteTrack(id);
-    setTracks(getTracks());
-    setConfirmId(null);
+  async function handleDelete(id: string) {
+    try {
+      await deleteTrack(id);
+      setTracks((prev) => prev.filter((t) => t.id !== id));
+      setConfirmId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete track.");
+    }
   }
 
   function clearFilters() {
@@ -65,7 +76,7 @@ export default function LibraryPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold tracking-tight">
               Library
-              {tracks.length > 0 && (
+              {!loading && tracks.length > 0 && (
                 <span className="ml-3 text-base font-normal text-white/30">
                   {filtered.length !== tracks.length
                     ? `${filtered.length} / ${tracks.length}`
@@ -75,66 +86,78 @@ export default function LibraryPage() {
             </h2>
           </div>
 
-          {/* Search + Filters */}
-          {tracks.length > 0 && (
-            <div className="flex flex-col gap-3 mb-8">
-              <input
-                type="text"
-                placeholder="Search by title, artist, genre, mood, notes…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors"
-              />
-              <div className="flex gap-3 flex-wrap items-center">
-                <select
-                  value={platformFilter}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  className="bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/60 focus:outline-none focus:border-white/30 transition-colors"
-                >
-                  <option value="">All platforms</option>
-                  {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/60 focus:outline-none focus:border-white/30 transition-colors"
-                >
-                  <option value="">All statuses</option>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-                {hasFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-2"
-                  >
-                    Clear filters
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* Error */}
+          {error && (
+            <p className="mb-6 text-sm text-red-400 text-center">{error}</p>
           )}
 
-          {/* Content */}
-          {tracks.length === 0 ? (
-            <EmptyState />
-          ) : filtered.length === 0 ? (
-            <div className="py-20 text-center text-white/30 text-sm">
-              No tracks match your search.
-            </div>
+          {/* Loading */}
+          {loading ? (
+            <div className="py-24 text-center text-white/30 text-sm">Loading…</div>
           ) : (
-            <ul className="flex flex-col gap-4">
-              {filtered.map((track) => (
-                <TrackCard
-                  key={track.id}
-                  track={track}
-                  confirming={confirmId === track.id}
-                  onAskDelete={() => setConfirmId(track.id)}
-                  onCancelDelete={() => setConfirmId(null)}
-                  onConfirmDelete={() => handleDelete(track.id)}
-                />
-              ))}
-            </ul>
+            <>
+              {/* Search + Filters */}
+              {tracks.length > 0 && (
+                <div className="flex flex-col gap-3 mb-8">
+                  <input
+                    type="text"
+                    placeholder="Search by title, artist, genre, mood, notes…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors"
+                  />
+                  <div className="flex gap-3 flex-wrap items-center">
+                    <select
+                      value={platformFilter}
+                      onChange={(e) => setPlatform(e.target.value)}
+                      className="bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/60 focus:outline-none focus:border-white/30 transition-colors"
+                    >
+                      <option value="">All platforms</option>
+                      {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatus(e.target.value)}
+                      className="bg-[#1a1a1a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/60 focus:outline-none focus:border-white/30 transition-colors"
+                    >
+                      <option value="">All statuses</option>
+                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {hasFilters && (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-2"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Content */}
+              {tracks.length === 0 ? (
+                <EmptyState />
+              ) : filtered.length === 0 ? (
+                <div className="py-20 text-center text-white/30 text-sm">
+                  No tracks match your search.
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-4">
+                  {filtered.map((track) => (
+                    <TrackCard
+                      key={track.id}
+                      track={track}
+                      confirming={confirmId === track.id}
+                      onAskDelete={() => setConfirmId(track.id)}
+                      onCancelDelete={() => setConfirmId(null)}
+                      onConfirmDelete={() => handleDelete(track.id)}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       </section>

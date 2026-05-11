@@ -2,29 +2,39 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { saveTrack } from "@/lib/tracks";
+import { createTrack } from "@/lib/supabase-tracks";
 import Header from "@/app/components/Header";
 
 const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
 const STATUSES = ["To listen", "To buy", "To play", "Inspiration"];
 
 export default function AddTrackPage() {
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved]   = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setSaving(true);
+    setError(null);
     const data = new FormData(e.currentTarget);
-    saveTrack({
-      title:          (data.get("title") as string) ?? "",
-      artist:         (data.get("artist") as string) ?? "",
-      sourcePlatform: (data.get("platform") as string) ?? "",
-      sourceUrl:      (data.get("url") as string) ?? "",
-      genre:          (data.get("genre") as string) ?? "",
-      mood:           (data.get("mood") as string) ?? "",
-      status:         (data.get("status") as string) ?? "",
-      notes:          (data.get("notes") as string) ?? "",
-    });
-    setSaved(true);
+    try {
+      await createTrack({
+        title:          (data.get("title") as string) ?? "",
+        artist:         (data.get("artist") as string) ?? "",
+        sourcePlatform: (data.get("platform") as string) ?? "",
+        sourceUrl:      (data.get("url") as string) ?? "",
+        genre:          (data.get("genre") as string) ?? "",
+        mood:           (data.get("mood") as string) ?? "",
+        status:         (data.get("status") as string) ?? "",
+        notes:          (data.get("notes") as string) ?? "",
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save track.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -57,6 +67,10 @@ export default function AddTrackPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              {error && (
+                <p className="text-sm text-red-400 text-center">{error}</p>
+              )}
+
               <Field label="Track title" required>
                 <input
                   type="text"
@@ -143,9 +157,10 @@ export default function AddTrackPage() {
 
               <button
                 type="submit"
-                className="mt-2 w-full py-3 rounded-full bg-white text-black font-semibold text-base hover:bg-white/90 transition-colors"
+                disabled={saving}
+                className="mt-2 w-full py-3 rounded-full bg-white text-black font-semibold text-base hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Save Track
+                {saving ? "Saving…" : "Save Track"}
               </button>
             </form>
           )}
