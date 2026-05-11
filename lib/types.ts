@@ -9,6 +9,7 @@ export type Track = {
   mood: string;
   status: string;
   notes: string;
+  sourceTimestamp: number | null;
   createdAt: string;
 };
 

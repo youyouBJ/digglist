@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { extractTimestampFromUrl } from "@/lib/timestamp";
 
 function extractMeta(html: string, property: string): string {
   const patterns = [
@@ -145,7 +146,8 @@ export async function GET(request: NextRequest) {
         ? getYouTubeThumbnail(parsed.toString()) || extractMeta(html, "og:image")
         : extractMeta(html, "og:image");
 
-    return NextResponse.json({ title, artist, platform, sourceUrl: parsed.toString(), imageUrl });
+    const timestamp = extractTimestampFromUrl(parsed.toString());
+    return NextResponse.json({ title, artist, platform, sourceUrl: parsed.toString(), imageUrl, timestamp });
   } catch (err) {
     const message =
       err instanceof Error && err.name === "TimeoutError"

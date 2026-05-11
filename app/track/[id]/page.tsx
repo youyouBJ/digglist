@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getStatusColor } from "@/lib/constants";
+import { formatTimestamp, buildTimestampUrl } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
@@ -79,8 +80,10 @@ export default function TrackDetailPage() {
             )}
             <div className="flex items-start justify-between gap-3 flex-1 min-w-0">
               <div className="min-w-0">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 leading-tight">
-                  {track.title}
+                <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight mb-1 leading-tight ${
+                  !track.title && track.status === "IDs Needed" ? "text-white/40 italic" : ""
+                }`}>
+                  {track.title || (track.status === "IDs Needed" ? "Unknown track" : "Untitled")}
                 </h2>
                 {track.artist && (
                   <p className="text-base sm:text-lg text-white/50">{track.artist}</p>
@@ -95,6 +98,12 @@ export default function TrackDetailPage() {
           {/* Details */}
           <div className="bg-[#161616] border border-white/8 rounded-2xl divide-y divide-white/5">
             <DetailRow label="Platform" value={track.sourcePlatform} />
+            {track.sourceTimestamp !== null && (
+              <DetailRow
+                label="Timestamp"
+                value={`⏱ ${formatTimestamp(track.sourceTimestamp)}`}
+              />
+            )}
             {track.genre && <DetailRow label="Genre" value={track.genre} />}
             {track.mood  && <DetailRow label="Mood"  value={track.mood} />}
             {track.sourceUrl && (
@@ -103,12 +112,14 @@ export default function TrackDetailPage() {
                   Source
                 </span>
                 <a
-                  href={track.sourceUrl}
+                  href={buildTimestampUrl(track.sourceUrl, track.sourceTimestamp)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-2 truncate text-right"
+                  className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-2 text-right"
                 >
-                  {track.sourceUrl}
+                  {track.sourceTimestamp !== null
+                    ? `Open at ${formatTimestamp(track.sourceTimestamp)} →`
+                    : "Open source →"}
                 </a>
               </div>
             )}
@@ -119,6 +130,28 @@ export default function TrackDetailPage() {
               })}
             />
           </div>
+
+          {/* IDs Needed guidance block */}
+          {track.status === "IDs Needed" && (
+            <div className="mt-4 bg-orange-500/[0.07] border border-orange-500/20 rounded-2xl px-6 py-5">
+              <p className="text-xs font-semibold uppercase tracking-widest text-orange-400/70 mb-2">
+                IDs Needed
+              </p>
+              <p className="text-sm text-white/50 leading-relaxed">
+                The track identity is unknown. Once identified, edit to add the title and artist, then update the status.
+              </p>
+              {track.sourceTimestamp !== null && track.sourceUrl && (
+                <a
+                  href={buildTimestampUrl(track.sourceUrl, track.sourceTimestamp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-4 text-sm text-orange-300 hover:text-orange-200 transition-colors font-medium"
+                >
+                  ⏱ Listen from {formatTimestamp(track.sourceTimestamp)} →
+                </a>
+              )}
+            </div>
+          )}
 
           {track.notes && (
             <div className="mt-4 bg-[#161616] border border-white/8 rounded-2xl px-6 py-5">

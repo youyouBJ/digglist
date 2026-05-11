@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, updateTrack, type Track } from "@/lib/supabase-tracks";
 import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
+import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { Field, inputClass, PageLoader, PageError } from "@/app/components/ui";
@@ -14,10 +15,11 @@ export default function EditTrackPage() {
   const user            = useRequireAuth();
   const { id }          = useParams<{ id: string }>();
   const router          = useRouter();
-  const [track, setTrack]   = useState<Track | null | undefined>(undefined);
-  const [form, setForm]     = useState<TrackFormState>(EMPTY_TRACK_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
+  const [track, setTrack]           = useState<Track | null | undefined>(undefined);
+  const [form, setForm]             = useState<TrackFormState>(EMPTY_TRACK_FORM);
+  const [storedTimestamp, setStoredTimestamp] = useState<number | null>(null);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -25,6 +27,7 @@ export default function EditTrackPage() {
       .then((t) => {
         if (!t) { setTrack(null); return; }
         setTrack(t);
+        setStoredTimestamp(t.sourceTimestamp);
         setForm({
           title:    t.title,
           artist:   t.artist,
@@ -49,16 +52,19 @@ export default function EditTrackPage() {
     setSaving(true);
     setError(null);
     try {
+      // Re-detect timestamp from current URL — updates if URL was changed
+      const finalTimestamp = extractTimestampFromUrl(form.url) ?? storedTimestamp;
       await updateTrack(id, {
-        title:          form.title,
-        artist:         form.artist,
-        sourcePlatform: form.platform,
-        sourceUrl:      form.url,
-        imageUrl:       form.imageUrl,
-        genre:          form.genre,
-        mood:           form.mood,
-        status:         form.status,
-        notes:          form.notes,
+        title:           form.title,
+        artist:          form.artist,
+        sourcePlatform:  form.platform,
+        sourceUrl:       form.url,
+        imageUrl:        form.imageUrl,
+        genre:           form.genre,
+        mood:            form.mood,
+        status:          form.status,
+        notes:           form.notes,
+        sourceTimestamp: finalTimestamp,
       });
       router.push(`/track/${id}`);
     } catch (err) {
@@ -160,6 +166,13 @@ export default function EditTrackPage() {
                 />
               </Field>
             </div>
+
+            {/* Timestamp — computed from URL, read-only */}
+            {(extractTimestampFromUrl(form.url) ?? storedTimestamp) !== null && (
+              <p className="text-xs text-orange-400/70 font-mono -mt-1 px-1">
+                ⏱ Timestamp: {formatTimestamp((extractTimestampFromUrl(form.url) ?? storedTimestamp)!)}
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Field label="Genre" className="sm:w-1/2">

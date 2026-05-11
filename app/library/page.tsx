@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { PLATFORMS, STATUSES, getStatusColor } from "@/lib/constants";
+import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
@@ -171,18 +172,26 @@ function TrackCard({
     <li className="group bg-[#161616] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-colors">
       <Link href={`/track/${track.id}`} className="block px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex gap-4 items-start">
-          {track.imageUrl && (
+          {track.imageUrl ? (
             <img
               src={track.imageUrl}
               alt={track.title}
               className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0"
             />
-          )}
+          ) : track.status === "IDs Needed" ? (
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-orange-500/10 border border-orange-500/20 shrink-0 flex items-center justify-center text-orange-300/50 text-lg font-bold">
+              ?
+            </div>
+          ) : null}
           <div className="flex flex-col gap-2.5 min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-base font-semibold text-white truncate leading-snug">
-                  {track.title}
+                <span className={`text-base font-semibold truncate leading-snug ${
+                  !track.title && track.status === "IDs Needed"
+                    ? "text-white/40 italic"
+                    : "text-white"
+                }`}>
+                  {track.title || (track.status === "IDs Needed" ? "Unknown track" : "Untitled")}
                 </span>
                 {track.artist && (
                   <span className="text-sm text-white/50">{track.artist}</span>
@@ -195,6 +204,11 @@ function TrackCard({
 
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-white/35">{track.sourcePlatform}</span>
+              {track.sourceTimestamp !== null && track.sourceTimestamp !== undefined && (
+                <span className="text-xs text-orange-400/60 font-mono">
+                  ⏱ {formatTimestamp(track.sourceTimestamp)}
+                </span>
+              )}
               {track.genre && <Tag>{track.genre}</Tag>}
               {track.mood  && <Tag>{track.mood}</Tag>}
             </div>
@@ -261,7 +275,7 @@ function EmptyState() {
       <p className="text-4xl">🎵</p>
       <p className="text-white/40 text-base">No tracks saved yet.</p>
       <Link
-        href="/add-track"
+        href="/quick-add"
         className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
       >
         + Add Track

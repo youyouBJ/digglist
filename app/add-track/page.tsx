@@ -9,6 +9,7 @@ import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { Field, inputClass, PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import { supabase } from "@/lib/supabase";
+import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 
 export default function AddTrackPage() {
   const user = useRequireAuth();
@@ -18,20 +19,24 @@ export default function AddTrackPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  const [fetchUrl, setFetchUrl] = useState("");
-  const [fetching, setFetching] = useState(false);
-  const [fetchMsg, setFetchMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [fetchUrl, setFetchUrl]         = useState("");
+  const [fetching, setFetching]         = useState(false);
+  const [fetchMsg, setFetchMsg]         = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
 
   // Pre-fill from quick-add via URL search params
   useEffect(() => {
-    const params    = new URLSearchParams(window.location.search);
+    const params     = new URLSearchParams(window.location.search);
     const prefillUrl = params.get("url");
     if (!prefillUrl) return;
 
     const prefillPlatform = params.get("platform") ?? "";
     const prefillStatus   = params.get("status") ?? "";
+    const tsStr           = params.get("ts");
+    const ts              = tsStr ? parseInt(tsStr, 10) : null;
 
     setFetchUrl(prefillUrl);
+    setTimestamp(Number.isFinite(ts) && ts! > 0 ? ts : extractTimestampFromUrl(prefillUrl));
     setForm((prev) => ({
       ...prev,
       url:      prefillUrl,
@@ -71,6 +76,8 @@ export default function AddTrackPage() {
         url:      data.sourceUrl || prev.url,
         imageUrl: data.imageUrl  || prev.imageUrl,
       }));
+      // Update timestamp from the fetched URL (may differ from fetchUrl if redirected)
+      setTimestamp(data.timestamp ?? extractTimestampFromUrl(trimmed));
       setFetchMsg({ type: "success", text: "Metadata imported — verify the fields then save." });
     } catch (err) {
       setFetchMsg({
@@ -88,15 +95,16 @@ export default function AddTrackPage() {
     setError(null);
     try {
       await createTrack({
-        title:          form.title,
-        artist:         form.artist,
-        sourcePlatform: form.platform,
-        sourceUrl:      form.url,
-        imageUrl:       form.imageUrl,
-        genre:          form.genre,
-        mood:           form.mood,
-        status:         form.status,
-        notes:          form.notes,
+        title:           form.title,
+        artist:          form.artist,
+        sourcePlatform:  form.platform,
+        sourceUrl:       form.url,
+        imageUrl:        form.imageUrl,
+        genre:           form.genre,
+        mood:            form.mood,
+        status:          form.status,
+        notes:           form.notes,
+        sourceTimestamp: sourceTimestamp ?? extractTimestampFromUrl(form.url),
       });
       setSaved(true);
     } catch (err) {
@@ -111,6 +119,7 @@ export default function AddTrackPage() {
     setForm(EMPTY_TRACK_FORM);
     setFetchUrl("");
     setFetchMsg(null);
+    setTimestamp(null);
     setError(null);
   }
 
@@ -168,6 +177,11 @@ export default function AddTrackPage() {
                     {fetching ? "Fetching…" : "Fetch metadata"}
                   </button>
                 </div>
+                {sourceTimestamp !== null && (
+                  <p className="text-xs text-orange-400/70 font-mono">
+                    ⏱ Timestamp detected: {formatTimestamp(sourceTimestamp)}
+                  </p>
+                )}
                 {fetchMsg && (
                   <p className={`text-xs ${fetchMsg.type === "error" ? "text-red-400" : "text-emerald-400"}`}>
                     {fetchMsg.text}
