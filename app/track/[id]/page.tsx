@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import Header from "@/app/components/Header";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -14,6 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function TrackDetailPage() {
+  const user = useRequireAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [track, setTrack]           = useState<Track | null | undefined>(undefined);
@@ -22,13 +24,14 @@ export default function TrackDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
     getTrackById(id)
       .then((t) => setTrack(t))
       .catch((e: Error) => {
         setError(e.message);
         setTrack(null);
       });
-  }, [id]);
+  }, [id, user]);
 
   async function handleDelete() {
     setDeleting(true);

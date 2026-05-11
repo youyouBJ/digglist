@@ -1,11 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export default function Header() {
-  const path = usePathname();
+  const path     = usePathname();
+  const router   = useRouter();
   const onLibrary = path.startsWith("/library") || path.startsWith("/track");
+  const isAuthPage = path.startsWith("/login") || path.startsWith("/signup");
+
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   return (
     <header className="flex items-center justify-between px-8 py-6 border-b border-white/10 shrink-0">
@@ -15,22 +41,34 @@ export default function Header() {
       >
         Digglist
       </Link>
-      <nav className="flex items-center gap-6">
-        <Link
-          href="/library"
-          className={`text-sm transition-colors ${
-            onLibrary ? "text-white font-medium" : "text-white/50 hover:text-white"
-          }`}
-        >
-          Library
-        </Link>
-        <Link
-          href="/add-track"
-          className="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
-        >
-          + Add Track
-        </Link>
-      </nav>
+
+      {!isAuthPage && (
+        <nav className="flex items-center gap-6">
+          <Link
+            href="/library"
+            className={`text-sm transition-colors ${
+              onLibrary ? "text-white font-medium" : "text-white/50 hover:text-white"
+            }`}
+          >
+            Library
+          </Link>
+          <Link
+            href="/add-track"
+            className="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
+          >
+            + Add Track
+          </Link>
+          {user && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm text-white/40 hover:text-white transition-colors"
+            >
+              Logout
+            </button>
+          )}
+        </nav>
+      )}
     </header>
   );
 }

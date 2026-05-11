@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import Header from "@/app/components/Header";
 
 const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
@@ -16,6 +17,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function LibraryPage() {
+  const user = useRequireAuth();
+
   const [tracks, setTracks]           = useState<Track[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -25,11 +28,23 @@ export default function LibraryPage() {
   const [confirmId, setConfirmId]     = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     getTracks()
       .then(setTracks)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-white/30 text-sm">Loading…</p>
+        </div>
+      </main>
+    );
+  }
 
   const hasFilters = search !== "" || platformFilter !== "" || statusFilter !== "";
 

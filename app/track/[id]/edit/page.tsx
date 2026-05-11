@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, updateTrack, type Track } from "@/lib/supabase-tracks";
+import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import Header from "@/app/components/Header";
 
 const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
 const STATUSES  = ["To listen", "To buy", "To play", "Inspiration"];
 
 export default function EditTrackPage() {
+  const user = useRequireAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [track, setTrack]   = useState<Track | null | undefined>(undefined);
@@ -17,13 +19,14 @@ export default function EditTrackPage() {
   const [error, setError]   = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) return;
     getTrackById(id)
       .then((t) => setTrack(t))
       .catch((e: Error) => {
         setError(e.message);
         setTrack(null);
       });
-  }, [id]);
+  }, [id, user]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -3,15 +3,29 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createTrack } from "@/lib/supabase-tracks";
+import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import Header from "@/app/components/Header";
 
 const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
 const STATUSES = ["To listen", "To buy", "To play", "Inspiration"];
 
 export default function AddTrackPage() {
+  const user = useRequireAuth();
+
   const [saved, setSaved]   = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+        <Header />
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-white/30 text-sm">Loading…</p>
+        </div>
+      </main>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
