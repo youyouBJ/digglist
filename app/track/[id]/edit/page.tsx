@@ -4,47 +4,61 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, updateTrack, type Track } from "@/lib/supabase-tracks";
+import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
+import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
+import { Field, inputClass, PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 
-const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
-const STATUSES  = ["To listen", "To buy", "To play", "Inspiration"];
-
 export default function EditTrackPage() {
-  const user = useRequireAuth();
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const user            = useRequireAuth();
+  const { id }          = useParams<{ id: string }>();
+  const router          = useRouter();
   const [track, setTrack]   = useState<Track | null | undefined>(undefined);
+  const [form, setForm]     = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getTrackById(id)
-      .then((t) => setTrack(t))
-      .catch((e: Error) => {
-        setError(e.message);
-        setTrack(null);
-      });
+      .then((t) => {
+        if (!t) { setTrack(null); return; }
+        setTrack(t);
+        setForm({
+          title:    t.title,
+          artist:   t.artist,
+          platform: t.sourcePlatform,
+          url:      t.sourceUrl,
+          imageUrl: t.imageUrl,
+          genre:    t.genre,
+          mood:     t.mood,
+          status:   t.status,
+          notes:    t.notes,
+        });
+      })
+      .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
+
+  function set(field: keyof TrackFormState, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!track) return;
     setSaving(true);
     setError(null);
-    const data = new FormData(e.currentTarget);
     try {
       await updateTrack(id, {
-        title:          (data.get("title") as string) ?? "",
-        artist:         (data.get("artist") as string) ?? "",
-        sourcePlatform: (data.get("platform") as string) ?? "",
-        sourceUrl:      (data.get("url") as string) ?? "",
-        imageUrl:       track.imageUrl,
-        genre:          (data.get("genre") as string) ?? "",
-        mood:           (data.get("mood") as string) ?? "",
-        status:         (data.get("status") as string) ?? "",
-        notes:          (data.get("notes") as string) ?? "",
+        title:          form.title,
+        artist:         form.artist,
+        sourcePlatform: form.platform,
+        sourceUrl:      form.url,
+        imageUrl:       form.imageUrl,
+        genre:          form.genre,
+        mood:           form.mood,
+        status:         form.status,
+        notes:          form.notes,
       });
       router.push(`/track/${id}`);
     } catch (err) {
@@ -53,28 +67,15 @@ export default function EditTrackPage() {
     }
   }
 
-  if (track === undefined) {
-    return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-white/30 text-sm">Loading…</p>
-        </div>
-      </main>
-    );
-  }
+  if (!user || track === undefined) return <PageLoader />;
 
   if (track === null) {
     return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center px-4">
-          <p className="text-white/40">{error ?? "Track not found."}</p>
-          <Link href="/library" className="text-sm text-white hover:text-white/70 transition-colors underline">
-            Back to Library
-          </Link>
-        </div>
-      </main>
+      <PageError
+        message={error ?? "Track not found."}
+        backHref="/library"
+        backLabel="Back to Library"
+      />
     );
   }
 
@@ -82,7 +83,7 @@ export default function EditTrackPage() {
     <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-12">
+      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
         <div className="w-full max-w-xl">
           <Link
             href={`/track/${id}`}
@@ -98,12 +99,33 @@ export default function EditTrackPage() {
               <p className="text-sm text-red-400 text-center">{error}</p>
             )}
 
+            {/* Cover preview */}
+            {form.imageUrl && (
+              <div className="flex items-center gap-3 bg-[#161616] border border-white/8 rounded-2xl px-4 py-3">
+                <img
+                  src={form.imageUrl}
+                  alt="Current cover"
+                  className="w-11 h-11 rounded-lg object-cover shrink-0"
+                />
+                <p className="text-xs text-white/25 truncate flex-1">Cover image attached</p>
+                <button
+                  type="button"
+                  onClick={() => set("imageUrl", "")}
+                  className="shrink-0 text-xs text-white/25 hover:text-red-400 transition-colors"
+                  aria-label="Remove cover"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <Field label="Track title" required>
               <input
                 type="text"
-                name="title"
-                defaultValue={track.title}
+                placeholder="e.g. Midnight Rider"
                 required
+                value={form.title}
+                onChange={(e) => set("title", e.target.value)}
                 className={inputClass}
               />
             </Field>
@@ -111,47 +133,50 @@ export default function EditTrackPage() {
             <Field label="Artist">
               <input
                 type="text"
-                name="artist"
-                defaultValue={track.artist}
+                placeholder="e.g. Allman Brothers Band"
+                value={form.artist}
+                onChange={(e) => set("artist", e.target.value)}
                 className={inputClass}
               />
             </Field>
 
-            <div className="flex gap-4">
-              <Field label="Source platform" className="w-1/2">
-                <select name="platform" defaultValue={track.sourcePlatform} className={inputClass}>
-                  {PLATFORMS.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Field label="Platform" className="sm:w-1/2">
+                <select
+                  value={form.platform}
+                  onChange={(e) => set("platform", e.target.value)}
+                  className={inputClass}
+                >
+                  {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </Field>
-              <Field label="Source URL" className="w-1/2">
+              <Field label="Source URL" className="sm:w-1/2">
                 <input
                   type="url"
-                  name="url"
-                  defaultValue={track.sourceUrl}
-                  placeholder="https://..."
+                  placeholder="https://…"
+                  value={form.url}
+                  onChange={(e) => set("url", e.target.value)}
                   className={inputClass}
                 />
               </Field>
             </div>
 
-            <div className="flex gap-4">
-              <Field label="Genre" className="w-1/2">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Field label="Genre" className="sm:w-1/2">
                 <input
                   type="text"
-                  name="genre"
-                  defaultValue={track.genre}
                   placeholder="e.g. Jazz, House, Soul…"
+                  value={form.genre}
+                  onChange={(e) => set("genre", e.target.value)}
                   className={inputClass}
                 />
               </Field>
-              <Field label="Mood" className="w-1/2">
+              <Field label="Mood" className="sm:w-1/2">
                 <input
                   type="text"
-                  name="mood"
-                  defaultValue={track.mood}
                   placeholder="e.g. Chill, Dark, Uplifting…"
+                  value={form.mood}
+                  onChange={(e) => set("mood", e.target.value)}
                   className={inputClass}
                 />
               </Field>
@@ -165,12 +190,11 @@ export default function EditTrackPage() {
                       type="radio"
                       name="status"
                       value={s}
-                      defaultChecked={track.status === s}
+                      checked={form.status === s}
+                      onChange={() => set("status", s)}
                       className="accent-white"
                     />
-                    <span className="text-sm text-white/60 group-hover:text-white transition-colors">
-                      {s}
-                    </span>
+                    <span className="text-sm text-white/60 group-hover:text-white transition-colors">{s}</span>
                   </label>
                 ))}
               </div>
@@ -178,10 +202,10 @@ export default function EditTrackPage() {
 
             <Field label="Notes">
               <textarea
-                name="notes"
                 rows={3}
-                defaultValue={track.notes}
                 placeholder="Context, feelings, where you found it…"
+                value={form.notes}
+                onChange={(e) => set("notes", e.target.value)}
                 className={`${inputClass} resize-none`}
               />
             </Field>
@@ -205,30 +229,5 @@ export default function EditTrackPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-const inputClass =
-  "w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors";
-
-function Field({
-  label,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-        {label}
-        {required && <span className="text-white/60 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
   );
 }

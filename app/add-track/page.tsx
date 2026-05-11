@@ -3,77 +3,50 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createTrack } from "@/lib/supabase-tracks";
+import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
+import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
+import { Field, inputClass, PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
-
-const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
-const STATUSES  = ["To listen", "To buy", "To play", "Inspiration"];
-
-type FormState = {
-  title: string;
-  artist: string;
-  platform: string;
-  url: string;
-  imageUrl: string;
-  genre: string;
-  mood: string;
-  status: string;
-  notes: string;
-};
-
-const EMPTY_FORM: FormState = {
-  title:    "",
-  artist:   "",
-  platform: "YouTube",
-  url:      "",
-  imageUrl: "",
-  genre:    "",
-  mood:     "",
-  status:   "To listen",
-  notes:    "",
-};
+import { supabase } from "@/lib/supabase";
 
 export default function AddTrackPage() {
   const user = useRequireAuth();
 
-  const [form, setForm]     = useState<FormState>(EMPTY_FORM);
+  const [form, setForm]     = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [saved, setSaved]   = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  // Fetch metadata state
-  const [fetchUrl, setFetchUrl]   = useState("");
-  const [fetching, setFetching]   = useState(false);
-  const [fetchMsg, setFetchMsg]   = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [fetchUrl, setFetchUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [fetchMsg, setFetchMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
-  if (!user) {
-    return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-white/30 text-sm">Loading…</p>
-        </div>
-      </main>
-    );
-  }
+  if (!user) return <PageLoader />;
 
-  function set(field: keyof FormState, value: string) {
+  function set(field: keyof TrackFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   async function handleFetch() {
-    if (!fetchUrl.trim()) return;
+    const trimmed = fetchUrl.trim();
+    if (!trimmed) return;
     setFetching(true);
     setFetchMsg(null);
     try {
-      const res = await fetch(`/api/fetch-metadata?url=${encodeURIComponent(fetchUrl.trim())}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/fetch-metadata?url=${encodeURIComponent(trimmed)}`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not fetch metadata.");
       setForm((prev) => ({
         ...prev,
         title:    data.title    || prev.title,
         artist:   data.artist   || prev.artist,
-        platform: PLATFORMS.includes(data.platform) ? data.platform : prev.platform,
+        platform: (PLATFORMS as readonly string[]).includes(data.platform)
+          ? data.platform
+          : prev.platform,
         url:      data.sourceUrl || prev.url,
         imageUrl: data.imageUrl  || prev.imageUrl,
       }));
@@ -112,23 +85,31 @@ export default function AddTrackPage() {
     }
   }
 
+  function handleAddAnother() {
+    setSaved(false);
+    setForm(EMPTY_TRACK_FORM);
+    setFetchUrl("");
+    setFetchMsg(null);
+    setError(null);
+  }
+
   return (
     <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-12">
+      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
         <div className="w-full max-w-xl">
           <h2 className="text-2xl font-bold mb-8 tracking-tight">Add a track</h2>
 
           {saved ? (
             <div className="flex flex-col items-center gap-6 py-16 text-center">
               <p className="text-3xl">✅</p>
-              <p className="text-xl font-semibold text-white">Track saved!</p>
+              <p className="text-xl font-semibold">Track saved!</p>
               <div className="flex gap-3 flex-wrap justify-center">
                 <button
                   type="button"
-                  onClick={() => { setSaved(false); setForm(EMPTY_FORM); setFetchUrl(""); setFetchMsg(null); }}
-                  className="px-6 py-2 rounded-full border border-white/20 text-white/70 text-sm hover:border-white/50 hover:text-white transition-colors"
+                  onClick={handleAddAnother}
+                  className="px-6 py-2 rounded-full border border-white/20 text-white/70 text-sm hover:border-white/40 hover:text-white transition-colors"
                 >
                   Add another
                 </button>
@@ -143,12 +124,12 @@ export default function AddTrackPage() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-              {/* ── Import from URL ── */}
+              {/* Import from URL */}
               <div className="bg-[#161616] border border-white/8 rounded-2xl p-5 flex flex-col gap-3">
                 <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
                   Import from URL
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     placeholder="Paste a YouTube, SoundCloud or Discogs URL…"
@@ -161,13 +142,13 @@ export default function AddTrackPage() {
                     type="button"
                     onClick={handleFetch}
                     disabled={fetching || !fetchUrl.trim()}
-                    className="shrink-0 px-4 py-3 rounded-xl border border-white/15 text-sm text-white/60 hover:text-white hover:border-white/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                    className="sm:shrink-0 px-4 py-3 rounded-xl border border-white/15 text-sm text-white/60 hover:text-white hover:border-white/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {fetching ? "Fetching…" : "Fetch metadata"}
                   </button>
                 </div>
                 {fetchMsg && (
-                  <p className={`text-xs ${fetchMsg.type === "error" ? "text-red-400" : "text-green-400"}`}>
+                  <p className={`text-xs ${fetchMsg.type === "error" ? "text-red-400" : "text-emerald-400"}`}>
                     {fetchMsg.text}
                   </p>
                 )}
@@ -176,13 +157,14 @@ export default function AddTrackPage() {
                     <img
                       src={form.imageUrl}
                       alt="Cover preview"
-                      className="w-12 h-12 rounded-lg object-cover shrink-0"
+                      className="w-11 h-11 rounded-lg object-cover shrink-0"
                     />
-                    <p className="text-xs text-white/30 truncate">{form.imageUrl}</p>
+                    <p className="text-xs text-white/25 truncate flex-1">{form.imageUrl}</p>
                     <button
                       type="button"
                       onClick={() => set("imageUrl", "")}
                       className="shrink-0 text-xs text-white/25 hover:text-red-400 transition-colors"
+                      aria-label="Remove cover"
                     >
                       ✕
                     </button>
@@ -194,7 +176,6 @@ export default function AddTrackPage() {
                 <p className="text-sm text-red-400 text-center">{error}</p>
               )}
 
-              {/* ── Manual fields ── */}
               <Field label="Track title" required>
                 <input
                   type="text"
@@ -216,8 +197,8 @@ export default function AddTrackPage() {
                 />
               </Field>
 
-              <div className="flex gap-4">
-                <Field label="Source platform" className="w-1/2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Field label="Platform" className="sm:w-1/2">
                   <select
                     value={form.platform}
                     onChange={(e) => set("platform", e.target.value)}
@@ -226,10 +207,10 @@ export default function AddTrackPage() {
                     {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </Field>
-                <Field label="Source URL" className="w-1/2">
+                <Field label="Source URL" className="sm:w-1/2">
                   <input
                     type="url"
-                    placeholder="https://..."
+                    placeholder="https://…"
                     value={form.url}
                     onChange={(e) => set("url", e.target.value)}
                     className={inputClass}
@@ -237,8 +218,8 @@ export default function AddTrackPage() {
                 </Field>
               </div>
 
-              <div className="flex gap-4">
-                <Field label="Genre" className="w-1/2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Field label="Genre" className="sm:w-1/2">
                   <input
                     type="text"
                     placeholder="e.g. Jazz, House, Soul…"
@@ -247,7 +228,7 @@ export default function AddTrackPage() {
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Mood" className="w-1/2">
+                <Field label="Mood" className="sm:w-1/2">
                   <input
                     type="text"
                     placeholder="e.g. Chill, Dark, Uplifting…"
@@ -298,30 +279,5 @@ export default function AddTrackPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-const inputClass =
-  "w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors";
-
-function Field({
-  label,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-        {label}
-        {required && <span className="text-white/60 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
   );
 }

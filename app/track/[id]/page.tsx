@@ -4,33 +4,25 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getStatusColor } from "@/lib/constants";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
+import { PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 
-const STATUS_COLORS: Record<string, string> = {
-  "To listen":   "bg-blue-500/15 text-blue-300",
-  "To buy":      "bg-yellow-500/15 text-yellow-300",
-  "To play":     "bg-green-500/15 text-green-300",
-  "Inspiration": "bg-purple-500/15 text-purple-300",
-};
-
 export default function TrackDetailPage() {
-  const user = useRequireAuth();
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
-  const [track, setTrack]           = useState<Track | null | undefined>(undefined);
-  const [error, setError]           = useState<string | null>(null);
-  const [deleting, setDeleting]     = useState(false);
+  const user                              = useRequireAuth();
+  const { id }                            = useParams<{ id: string }>();
+  const router                            = useRouter();
+  const [track, setTrack]                 = useState<Track | null | undefined>(undefined);
+  const [error, setError]                 = useState<string | null>(null);
+  const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     getTrackById(id)
-      .then((t) => setTrack(t))
-      .catch((e: Error) => {
-        setError(e.message);
-        setTrack(null);
-      });
+      .then(setTrack)
+      .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
 
   async function handleDelete() {
@@ -44,41 +36,27 @@ export default function TrackDetailPage() {
     }
   }
 
-  if (track === undefined) {
-    return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-white/30 text-sm">Loading…</p>
-        </div>
-      </main>
-    );
-  }
+  if (!user || track === undefined) return <PageLoader />;
 
   if (track === null) {
     return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center px-4">
-          <p className="text-white/40">{error ?? "Track not found."}</p>
-          <Link href="/library" className="text-sm text-white hover:text-white/70 transition-colors underline">
-            Back to Library
-          </Link>
-        </div>
-      </main>
+      <PageError
+        message={error ?? "Track not found."}
+        backHref="/library"
+        backLabel="Back to Library"
+      />
     );
   }
 
-  const statusColor = STATUS_COLORS[track.status] ?? "bg-white/10 text-white/50";
+  const statusColor = getStatusColor(track.status);
 
   return (
     <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-12">
+      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
         <div className="w-full max-w-xl">
 
-          {/* Back */}
           <Link
             href="/library"
             className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors mb-8"
@@ -86,42 +64,43 @@ export default function TrackDetailPage() {
             ← Library
           </Link>
 
-          {/* Error */}
           {error && (
             <p className="mb-6 text-sm text-red-400 text-center">{error}</p>
           )}
 
           {/* Title block */}
-          <div className="flex items-start gap-5 mb-8">
+          <div className="flex items-start gap-4 sm:gap-5 mb-8">
             {track.imageUrl && (
               <img
                 src={track.imageUrl}
                 alt={track.title}
-                className="w-24 h-24 rounded-2xl object-cover shrink-0"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shrink-0"
               />
             )}
-            <div className="flex items-start justify-between gap-4 flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-3 flex-1 min-w-0">
               <div className="min-w-0">
-                <h2 className="text-3xl font-bold tracking-tight mb-1">{track.title}</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 leading-tight">
+                  {track.title}
+                </h2>
                 {track.artist && (
-                  <p className="text-lg text-white/50">{track.artist}</p>
+                  <p className="text-base sm:text-lg text-white/50">{track.artist}</p>
                 )}
               </div>
-              <span className={`shrink-0 mt-1 px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
+              <span className={`shrink-0 mt-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
                 {track.status}
               </span>
             </div>
           </div>
 
-          {/* Details grid */}
+          {/* Details */}
           <div className="bg-[#161616] border border-white/8 rounded-2xl divide-y divide-white/5">
             <DetailRow label="Platform" value={track.sourcePlatform} />
-            {track.genre     && <DetailRow label="Genre" value={track.genre} />}
-            {track.mood      && <DetailRow label="Mood"  value={track.mood} />}
+            {track.genre && <DetailRow label="Genre" value={track.genre} />}
+            {track.mood  && <DetailRow label="Mood"  value={track.mood} />}
             {track.sourceUrl && (
               <div className="flex items-baseline justify-between gap-4 px-6 py-4">
                 <span className="text-xs font-semibold uppercase tracking-widest text-white/30 shrink-0">
-                  Source URL
+                  Source
                 </span>
                 <a
                   href={track.sourceUrl}
@@ -141,9 +120,8 @@ export default function TrackDetailPage() {
             />
           </div>
 
-          {/* Notes */}
           {track.notes && (
-            <div className="mt-6 bg-[#161616] border border-white/8 rounded-2xl px-6 py-5">
+            <div className="mt-4 bg-[#161616] border border-white/8 rounded-2xl px-6 py-5">
               <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">Notes</p>
               <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{track.notes}</p>
             </div>

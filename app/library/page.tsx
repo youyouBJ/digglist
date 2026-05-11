@@ -3,18 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { PLATFORMS, STATUSES, getStatusColor } from "@/lib/constants";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
+import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
-
-const PLATFORMS = ["YouTube", "SoundCloud", "Discogs", "TikTok", "Instagram", "Other"];
-const STATUSES  = ["To listen", "To buy", "To play", "Inspiration"];
-
-const STATUS_COLORS: Record<string, string> = {
-  "To listen":   "bg-blue-500/15 text-blue-300",
-  "To buy":      "bg-yellow-500/15 text-yellow-300",
-  "To play":     "bg-green-500/15 text-green-300",
-  "Inspiration": "bg-purple-500/15 text-purple-300",
-};
 
 export default function LibraryPage() {
   const user = useRequireAuth();
@@ -35,16 +27,7 @@ export default function LibraryPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (!user) {
-    return (
-      <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
-        <Header />
-        <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-white/30 text-sm">Loading…</p>
-        </div>
-      </main>
-    );
-  }
+  if (!user) return <PageLoader />;
 
   const hasFilters = search !== "" || platformFilter !== "" || statusFilter !== "";
 
@@ -74,20 +57,13 @@ export default function LibraryPage() {
     }
   }
 
-  function clearFilters() {
-    setSearch("");
-    setPlatform("");
-    setStatus("");
-  }
-
   return (
     <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-12">
+      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
         <div className="w-full max-w-2xl">
 
-          {/* Title */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold tracking-tight">
               Library
@@ -95,23 +71,20 @@ export default function LibraryPage() {
                 <span className="ml-3 text-base font-normal text-white/30">
                   {filtered.length !== tracks.length
                     ? `${filtered.length} / ${tracks.length}`
-                    : `${tracks.length} track${tracks.length > 1 ? "s" : ""}`}
+                    : `${tracks.length} track${tracks.length !== 1 ? "s" : ""}`}
                 </span>
               )}
             </h2>
           </div>
 
-          {/* Error */}
           {error && (
             <p className="mb-6 text-sm text-red-400 text-center">{error}</p>
           )}
 
-          {/* Loading */}
           {loading ? (
             <div className="py-24 text-center text-white/30 text-sm">Loading…</div>
           ) : (
             <>
-              {/* Search + Filters */}
               {tracks.length > 0 && (
                 <div className="flex flex-col gap-3 mb-8">
                   <input
@@ -121,7 +94,7 @@ export default function LibraryPage() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors"
                   />
-                  <div className="flex gap-3 flex-wrap items-center">
+                  <div className="flex gap-2 flex-wrap items-center">
                     <select
                       value={platformFilter}
                       onChange={(e) => setPlatform(e.target.value)}
@@ -141,7 +114,7 @@ export default function LibraryPage() {
                     {hasFilters && (
                       <button
                         type="button"
-                        onClick={clearFilters}
+                        onClick={() => { setSearch(""); setPlatform(""); setStatus(""); }}
                         className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-2"
                       >
                         Clear filters
@@ -151,7 +124,6 @@ export default function LibraryPage() {
                 </div>
               )}
 
-              {/* Content */}
               {tracks.length === 0 ? (
                 <EmptyState />
               ) : filtered.length === 0 ? (
@@ -159,7 +131,7 @@ export default function LibraryPage() {
                   No tracks match your search.
                 </div>
               ) : (
-                <ul className="flex flex-col gap-4">
+                <ul className="flex flex-col gap-3">
                   {filtered.map((track) => (
                     <TrackCard
                       key={track.id}
@@ -193,42 +165,42 @@ function TrackCard({
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
 }) {
-  const statusColor = STATUS_COLORS[track.status] ?? "bg-white/10 text-white/50";
+  const statusColor = getStatusColor(track.status);
 
   return (
     <li className="group bg-[#161616] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-colors">
-      <Link href={`/track/${track.id}`} className="block px-6 py-5">
+      <Link href={`/track/${track.id}`} className="block px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex gap-4 items-start">
           {track.imageUrl && (
             <img
               src={track.imageUrl}
               alt={track.title}
-              className="w-14 h-14 rounded-xl object-cover shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0"
             />
           )}
-          <div className="flex flex-col gap-3 min-w-0 flex-1">
-            {/* Top */}
-            <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2.5 min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-base font-semibold text-white truncate">{track.title}</span>
+                <span className="text-base font-semibold text-white truncate leading-snug">
+                  {track.title}
+                </span>
                 {track.artist && (
                   <span className="text-sm text-white/50">{track.artist}</span>
                 )}
               </div>
-              <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+              <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
                 {track.status}
               </span>
             </div>
 
-            {/* Tags */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-white/40">{track.sourcePlatform}</span>
+              <span className="text-xs text-white/35">{track.sourcePlatform}</span>
               {track.genre && <Tag>{track.genre}</Tag>}
               {track.mood  && <Tag>{track.mood}</Tag>}
             </div>
 
             {track.notes && (
-              <p className="text-sm text-white/40 leading-relaxed line-clamp-2">
+              <p className="text-sm text-white/35 leading-relaxed line-clamp-2">
                 {track.notes}
               </p>
             )}
@@ -242,8 +214,7 @@ function TrackCard({
         </div>
       </Link>
 
-      {/* Delete area */}
-      <div className="px-6 pb-4 flex items-center gap-3">
+      <div className="px-5 pb-4 sm:px-6 flex items-center gap-3">
         {confirming ? (
           <>
             <span className="text-xs text-white/50">Delete this track?</span>
@@ -266,7 +237,7 @@ function TrackCard({
           <button
             type="button"
             onClick={onAskDelete}
-            className="text-xs text-white/25 hover:text-red-400 transition-colors group-hover:text-white/40"
+            className="text-xs text-white/20 hover:text-red-400 transition-colors group-hover:text-white/35"
           >
             Delete
           </button>

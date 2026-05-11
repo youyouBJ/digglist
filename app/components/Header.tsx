@@ -7,24 +7,17 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
 export default function Header() {
-  const path     = usePathname();
-  const router   = useRouter();
-  const onLibrary = path.startsWith("/library") || path.startsWith("/track");
+  const path       = usePathname();
+  const router     = useRouter();
+  const onLibrary  = path.startsWith("/library") || path.startsWith("/track");
   const isAuthPage = path.startsWith("/login") || path.startsWith("/signup");
 
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
     });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null);
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -34,19 +27,19 @@ export default function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between px-8 py-6 border-b border-white/10 shrink-0">
+    <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-white/10 shrink-0">
       <Link
-        href="/"
-        className="text-2xl font-bold tracking-widest uppercase text-white hover:text-white/80 transition-colors"
+        href={user ? "/library" : "/"}
+        className="text-xl sm:text-2xl font-bold tracking-widest uppercase text-white hover:text-white/80 transition-colors"
       >
         Digglist
       </Link>
 
       {!isAuthPage && (
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-3 sm:gap-6">
           <Link
             href="/library"
-            className={`text-sm transition-colors ${
+            className={`hidden sm:block text-sm transition-colors ${
               onLibrary ? "text-white font-medium" : "text-white/50 hover:text-white"
             }`}
           >
@@ -54,7 +47,7 @@ export default function Header() {
           </Link>
           <Link
             href="/add-track"
-            className="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
+            className="px-4 sm:px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
           >
             + Add Track
           </Link>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Field, inputClass } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 
 export default function LoginPage() {
@@ -47,24 +48,19 @@ export default function LoginPage() {
               <p className="text-sm text-red-400 text-center">{error}</p>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Email
-              </label>
+            <Field label="Email">
               <input
                 type="email"
                 name="email"
                 placeholder="you@example.com"
                 required
+                autoFocus
                 autoComplete="email"
                 className={inputClass}
               />
-            </div>
+            </Field>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Password
-              </label>
+            <Field label="Password">
               <input
                 type="password"
                 name="password"
@@ -73,7 +69,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 className={inputClass}
               />
-            </div>
+            </Field>
 
             <button
               type="submit"
@@ -95,6 +91,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-const inputClass =
-  "w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors";

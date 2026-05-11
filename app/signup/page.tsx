@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Field, inputClass } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const data = new FormData(e.currentTarget);
+    const data     = new FormData(e.currentTarget);
     const email    = (data.get("email") as string).trim();
     const password = data.get("password") as string;
 
@@ -48,7 +49,7 @@ export default function SignupPage() {
         <section className="flex flex-col items-center justify-center flex-1 px-4 text-center gap-5">
           <p className="text-4xl">📬</p>
           <h2 className="text-xl font-semibold">Check your email</h2>
-          <p className="text-white/40 text-sm max-w-xs">
+          <p className="text-white/40 text-sm max-w-xs leading-relaxed">
             We sent you a confirmation link. Click it to activate your account, then sign in.
           </p>
           <Link
@@ -75,25 +76,25 @@ export default function SignupPage() {
               <p className="text-sm text-red-400 text-center">{error}</p>
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Email
-              </label>
+            <Field label="Email">
               <input
                 type="email"
                 name="email"
                 placeholder="you@example.com"
                 required
+                autoFocus
                 autoComplete="email"
                 className={inputClass}
               />
-            </div>
+            </Field>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Password
-                <span className="ml-2 normal-case font-normal text-white/25">min. 6 characters</span>
-              </label>
+              <div className="flex items-baseline justify-between">
+                <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
+                  Password
+                </label>
+                <span className="text-xs text-white/25">min. 6 characters</span>
+              </div>
               <input
                 type="password"
                 name="password"
@@ -125,6 +126,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-const inputClass =
-  "w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors";

@@ -6,30 +6,25 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
 /**
- * Verifies the user is authenticated.
- * Returns User when authenticated, undefined while checking.
- * Redirects to /login if no active session.
+ * Checks that the current user is authenticated.
+ * Returns the User object when confirmed, undefined while checking.
+ * Automatically redirects to /login if no active session.
+ *
+ * Relies solely on onAuthStateChange which fires an INITIAL_SESSION event
+ * immediately on subscription — no need for a redundant getSession() call.
  */
 export function useRequireAuth(): User | undefined {
   const router = useRouter();
   const [user, setUser] = useState<User | undefined>(undefined);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace("/login");
-      } else {
-        setUser(session.user);
-      }
-    });
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) {
-        router.replace("/login");
-      } else {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
         setUser(session.user);
+      } else if (event === "INITIAL_SESSION" || event === "SIGNED_OUT") {
+        router.replace("/login");
       }
     });
 

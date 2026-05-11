@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
-import type { Track } from "./tracks";
+import type { Track } from "./types";
 
-export type { Track } from "./tracks";
+export type { Track } from "./types";
 
 type TrackRow = {
   id: string;
@@ -19,31 +19,31 @@ type TrackRow = {
 
 function toTrack(row: TrackRow): Track {
   return {
-    id: row.id,
-    title: row.title,
-    artist: row.artist,
+    id:             row.id,
+    title:          row.title,
+    artist:         row.artist,
     sourcePlatform: row.source_platform,
-    sourceUrl: row.source_url,
-    imageUrl: row.image_url,
-    genre: row.genre,
-    mood: row.mood,
-    status: row.status,
-    notes: row.notes,
-    createdAt: row.created_at,
+    sourceUrl:      row.source_url,
+    imageUrl:       row.image_url,
+    genre:          row.genre,
+    mood:           row.mood,
+    status:         row.status,
+    notes:          row.notes,
+    createdAt:      row.created_at,
   };
 }
 
 function toRow(data: Omit<Track, "id" | "createdAt">) {
   return {
-    title: data.title,
-    artist: data.artist,
+    title:           data.title,
+    artist:          data.artist,
     source_platform: data.sourcePlatform,
-    source_url: data.sourceUrl,
-    image_url: data.imageUrl,
-    genre: data.genre,
-    mood: data.mood,
-    status: data.status,
-    notes: data.notes,
+    source_url:      data.sourceUrl,
+    image_url:       data.imageUrl,
+    genre:           data.genre,
+    mood:            data.mood,
+    status:          data.status,
+    notes:           data.notes,
   };
 }
 
@@ -98,6 +98,5 @@ export async function updateTrack(
 
 export async function deleteTrack(id: string): Promise<void> {
   const { error } = await supabase.from("tracks").delete().eq("id", id);
-
   if (error) throw new Error(error.message);
 }
