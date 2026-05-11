@@ -92,16 +92,25 @@ export default function TrackDetailPage() {
           )}
 
           {/* Title block */}
-          <div className="flex items-start justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight mb-1">{track.title}</h2>
-              {track.artist && (
-                <p className="text-lg text-white/50">{track.artist}</p>
-              )}
+          <div className="flex items-start gap-5 mb-8">
+            {track.imageUrl && (
+              <img
+                src={track.imageUrl}
+                alt={track.title}
+                className="w-24 h-24 rounded-2xl object-cover shrink-0"
+              />
+            )}
+            <div className="flex items-start justify-between gap-4 flex-1 min-w-0">
+              <div className="min-w-0">
+                <h2 className="text-3xl font-bold tracking-tight mb-1">{track.title}</h2>
+                {track.artist && (
+                  <p className="text-lg text-white/50">{track.artist}</p>
+                )}
+              </div>
+              <span className={`shrink-0 mt-1 px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
+                {track.status}
+              </span>
             </div>
-            <span className={`shrink-0 mt-1 px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
-              {track.status}
-            </span>
           </div>
 
           {/* Details grid */}

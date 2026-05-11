@@ -9,6 +9,7 @@ type TrackRow = {
   artist: string;
   source_platform: string;
   source_url: string;
+  image_url: string;
   genre: string;
   mood: string;
   status: string;
@@ -23,6 +24,7 @@ function toTrack(row: TrackRow): Track {
     artist: row.artist,
     sourcePlatform: row.source_platform,
     sourceUrl: row.source_url,
+    imageUrl: row.image_url,
     genre: row.genre,
     mood: row.mood,
     status: row.status,
@@ -37,6 +39,7 @@ function toRow(data: Omit<Track, "id" | "createdAt">) {
     artist: data.artist,
     source_platform: data.sourcePlatform,
     source_url: data.sourceUrl,
+    image_url: data.imageUrl,
     genre: data.genre,
     mood: data.mood,
     status: data.status,

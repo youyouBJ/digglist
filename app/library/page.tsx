@@ -198,38 +198,47 @@ function TrackCard({
   return (
     <li className="group bg-[#161616] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-colors">
       <Link href={`/track/${track.id}`} className="block px-6 py-5">
-        <div className="flex flex-col gap-3">
-          {/* Top */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-base font-semibold text-white truncate">{track.title}</span>
-              {track.artist && (
-                <span className="text-sm text-white/50">{track.artist}</span>
-              )}
+        <div className="flex gap-4 items-start">
+          {track.imageUrl && (
+            <img
+              src={track.imageUrl}
+              alt={track.title}
+              className="w-14 h-14 rounded-xl object-cover shrink-0"
+            />
+          )}
+          <div className="flex flex-col gap-3 min-w-0 flex-1">
+            {/* Top */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-base font-semibold text-white truncate">{track.title}</span>
+                {track.artist && (
+                  <span className="text-sm text-white/50">{track.artist}</span>
+                )}
+              </div>
+              <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+                {track.status}
+              </span>
             </div>
-            <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
-              {track.status}
+
+            {/* Tags */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-white/40">{track.sourcePlatform}</span>
+              {track.genre && <Tag>{track.genre}</Tag>}
+              {track.mood  && <Tag>{track.mood}</Tag>}
+            </div>
+
+            {track.notes && (
+              <p className="text-sm text-white/40 leading-relaxed line-clamp-2">
+                {track.notes}
+              </p>
+            )}
+
+            <span className="text-xs text-white/20">
+              {new Date(track.createdAt).toLocaleDateString("en-GB", {
+                day: "numeric", month: "short", year: "numeric",
+              })}
             </span>
           </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-white/40">{track.sourcePlatform}</span>
-            {track.genre && <Tag>{track.genre}</Tag>}
-            {track.mood  && <Tag>{track.mood}</Tag>}
-          </div>
-
-          {track.notes && (
-            <p className="text-sm text-white/40 leading-relaxed line-clamp-2">
-              {track.notes}
-            </p>
-          )}
-
-          <span className="text-xs text-white/20">
-            {new Date(track.createdAt).toLocaleDateString("en-GB", {
-              day: "numeric", month: "short", year: "numeric",
-            })}
-          </span>
         </div>
       </Link>
 

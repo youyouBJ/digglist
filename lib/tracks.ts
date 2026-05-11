@@ -4,6 +4,7 @@ export type Track = {
   artist: string;
   sourcePlatform: string;
   sourceUrl: string;
+  imageUrl: string;
   genre: string;
   mood: string;
   status: string;

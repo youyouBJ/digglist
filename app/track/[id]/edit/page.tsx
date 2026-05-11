@@ -40,6 +40,7 @@ export default function EditTrackPage() {
         artist:         (data.get("artist") as string) ?? "",
         sourcePlatform: (data.get("platform") as string) ?? "",
         sourceUrl:      (data.get("url") as string) ?? "",
+        imageUrl:       track.imageUrl,
         genre:          (data.get("genre") as string) ?? "",
         mood:           (data.get("mood") as string) ?? "",
         status:         (data.get("status") as string) ?? "",
