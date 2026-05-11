@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createTrack } from "@/lib/supabase-tracks";
 import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
 import type { TrackFormState } from "@/lib/types";
@@ -21,6 +21,27 @@ export default function AddTrackPage() {
   const [fetchUrl, setFetchUrl] = useState("");
   const [fetching, setFetching] = useState(false);
   const [fetchMsg, setFetchMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+
+  // Pre-fill from quick-add via URL search params
+  useEffect(() => {
+    const params    = new URLSearchParams(window.location.search);
+    const prefillUrl = params.get("url");
+    if (!prefillUrl) return;
+
+    const prefillPlatform = params.get("platform") ?? "";
+    const prefillStatus   = params.get("status") ?? "";
+
+    setFetchUrl(prefillUrl);
+    setForm((prev) => ({
+      ...prev,
+      url:      prefillUrl,
+      title:    params.get("title")    ?? prev.title,
+      artist:   params.get("artist")   ?? prev.artist,
+      imageUrl: params.get("imageUrl") ?? prev.imageUrl,
+      platform: (PLATFORMS as readonly string[]).includes(prefillPlatform) ? prefillPlatform : prev.platform,
+      status:   (STATUSES  as readonly string[]).includes(prefillStatus)   ? prefillStatus   : prev.status,
+    }));
+  }, []);
 
   if (!user) return <PageLoader />;
 

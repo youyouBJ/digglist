@@ -46,7 +46,7 @@ export default function Header() {
             Library
           </Link>
           <Link
-            href="/add-track"
+            href="/quick-add"
             className="px-4 sm:px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
           >
             + Add Track
