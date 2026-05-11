@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Digglist",
   description: "Save and organize your music discoveries.",
+  other: {
+    // PWA / iOS Safari
+    "apple-mobile-web-app-capable":    "yes",
+    "apple-mobile-web-app-title":      "Digglist",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "mobile-web-app-capable":          "yes",
+  },
 };
 
 export default function RootLayout({
@@ -27,6 +34,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="theme-color" content="#0d0d0d" />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
