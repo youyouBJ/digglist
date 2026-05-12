@@ -18,13 +18,13 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Phase 1 complète. Sprint 0 UX Quick Wins en cours (4/7).**
+**Beta stable. Phase 1 complète. Sprint 0 UX Quick Wins terminé (7/7). Prochain : Sprint 2A.**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 0 — UX Quick Wins
+## Prochaine tâche recommandée : Sprint 2A — Sets System
 
-**Sprint 0 en cours. 6/7 tâches faites.**
+**Sprint 0 terminé. 7/7 tâches faites. ✅**
 
 1. ~~BUG-02 — Back button conditionnel~~ ✅
 2. ~~UX-01 — Rating ★ + crate dots dans les rows~~ ✅
@@ -32,10 +32,9 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 4. ~~CRATES-COUNT-01 — Crate filter pills avec count~~ ✅
 5. ~~SORT-01 — Tri Library et IDs (Date ↓, Rating ↓, A–Z)~~ ✅
 6. ~~UX-FOUND-01 — "Mark as found" sheet légère~~ ✅
-6. **UX-FOUND-01** — "Mark as found" sheet légère 3 champs — `track/[id]/page.tsx` — complexité M
-7. **CRATES-VIS-02** — Hiérarchie visuelle sous-crates — `crates/page.tsx` — complexité S
+7. ~~CRATES-VIS-02 — Hiérarchie visuelle sous-crates~~ ✅
 
-Aucune migration SQL dans ce sprint. Aucune nouvelle route. ~1–2 sessions.
+Prochaine étape : Sprint 2A — Sets System (nécessite migration SQL).
 
 ---
 

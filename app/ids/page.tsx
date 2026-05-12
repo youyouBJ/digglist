@@ -10,6 +10,20 @@ import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 
+/* ─── Hierarchy sort ─────────────────────────────────────────────────────── */
+
+function sortCratesHierarchically<T extends { id: string; parentId: string | null }>(crates: T[]): T[] {
+  const result: T[] = [];
+  for (const parent of crates.filter((c) => !c.parentId)) {
+    result.push(parent);
+    result.push(...crates.filter((c) => c.parentId === parent.id));
+  }
+  for (const c of crates) {
+    if (c.parentId && !crates.some((p) => p.id === c.parentId)) result.push(c);
+  }
+  return result;
+}
+
 /* ─── Relative date ──────────────────────────────────────────────────────── */
 
 function relativeDate(dateStr: string): string {
@@ -201,25 +215,30 @@ export default function IdsPage() {
           {crates.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto px-5 sm:px-8 pb-3"
               style={{ scrollbarWidth: "none" }}>
-              {crates.filter((c) => (crateCountMap[c.id] ?? 0) > 0).map((c) => {
+              {sortCratesHierarchically(crates).filter((c) => (crateCountMap[c.id] ?? 0) > 0).map((c) => {
                 const count  = crateCountMap[c.id] ?? 0;
                 const active = crateFilter === c.id;
+                const isSub  = !!c.parentId;
                 return (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => setCrateFilter(active ? "" : c.id)}
-                    className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
+                    className="flex items-center gap-1 shrink-0 h-[30px] px-3 rounded-full transition-colors"
                     style={{
                       background: active ? `${c.color}18` : "transparent",
                       border:     active ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
                       color:      active ? c.color : "var(--t2)",
+                      fontSize:   isSub ? 11 : 12,
                     }}
                   >
-                    <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                    {isSub && (
+                      <span className="text-[9px] mr-0.5" style={{ color: "rgba(201,162,74,0.4)" }}>↳</span>
+                    )}
+                    <span className="w-[5px] h-[5px] rounded-full shrink-0 mr-1"
                       style={{ background: c.color, opacity: active ? 1 : 0.5 }} />
                     {c.name}
-                    <span className="text-[10px]" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
+                    <span className="text-[10px] ml-1" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
                       {count}
                     </span>
                   </button>

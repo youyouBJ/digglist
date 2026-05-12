@@ -35,7 +35,7 @@
 | 4 | UX-03 / CRATES-COUNT-01 | Crate filter pills avec count `Techno 12` | `library/page.tsx`, `ids/page.tsx` | S | aucune | ✅ |
 | 5 | SORT-01 | Tri Library et IDs : Date ↓, Rating ↓, A–Z | `library/page.tsx`, `ids/page.tsx` | S | aucune | ✅ |
 | 6 | UX-FOUND-01 | "Mark as found" — sheet légère 3 champs | `track/[id]/page.tsx` | M | aucune | ✅ |
-| 7 | CRATES-VIS-02 | Hiérarchie visuelle sous-crates | `crates/page.tsx` | S | aucune | À faire |
+| 7 | CRATES-VIS-02 | Hiérarchie visuelle sous-crates | `crates/page.tsx` | S | aucune | ✅ |
 
 **À éviter dans ce sprint :**
 - UX-08 (Add Track form reorder) — risque de régression sur un form complexe

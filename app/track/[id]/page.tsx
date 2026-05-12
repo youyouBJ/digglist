@@ -444,27 +444,34 @@ export default function TrackDetailPage() {
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5" style={{ scrollbarWidth: "none" }}>
-              {allCrates.map((crate) => {
+              {sortCratesHierarchically(allCrates).map((crate) => {
                 const inCrate = trackCrates.some((c) => c.id === crate.id);
+                const isSub   = !!crate.parentId;
                 return (
                   <button
                     key={crate.id}
                     type="button"
                     onClick={() => handleCrateToggle(crate)}
                     className="w-full flex items-center gap-3 py-3 text-left"
-                    style={{ borderBottom: "0.5px solid var(--rule)" }}
+                    style={{ borderBottom: "0.5px solid var(--rule)", paddingLeft: isSub ? 36 : 0 }}
                   >
-                    <div
-                      className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
-                      style={{ background: `${crate.color}14`, border: `0.5px solid ${crate.color}30` }}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: crate.color }} />
-                    </div>
+                    {isSub ? (
+                      <span className="w-2 h-2 rounded-full shrink-0"
+                        style={{ background: crate.color }} />
+                    ) : (
+                      <div
+                        className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
+                        style={{ background: `${crate.color}14`, border: `0.5px solid ${crate.color}30` }}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: crate.color }} />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium truncate" style={{ color: "var(--t1)" }}>
+                      <p className="truncate"
+                        style={{ color: "var(--t1)", fontSize: isSub ? 12 : 13, fontWeight: isSub ? 400 : 500 }}>
                         {crate.name}
                       </p>
-                      {crate.description && (
+                      {!isSub && crate.description && (
                         <p className="text-[11px] truncate" style={{ color: "var(--t3)" }}>
                           {crate.description}
                         </p>
@@ -699,6 +706,20 @@ export default function TrackDetailPage() {
       <BottomNav />
     </main>
   );
+}
+
+/* ─── Hierarchy sort ─────────────────────────────────────────────────────── */
+
+function sortCratesHierarchically<T extends { id: string; parentId: string | null }>(crates: T[]): T[] {
+  const result: T[] = [];
+  for (const parent of crates.filter((c) => !c.parentId)) {
+    result.push(parent);
+    result.push(...crates.filter((c) => c.parentId === parent.id));
+  }
+  for (const c of crates) {
+    if (c.parentId && !crates.some((p) => p.id === c.parentId)) result.push(c);
+  }
+  return result;
 }
 
 /* ─── Embed ──────────────────────────────────────────────────────────────── */

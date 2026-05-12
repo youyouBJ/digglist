@@ -43,9 +43,8 @@ export default function CratesPage() {
   if (!user) return <PageLoader />;
 
   const topLevel  = crates.filter((c) => !c.parentId);
-  const subCrates = crates.filter((c) =>  c.parentId);
   const subMap: Record<string, CrateWithCount[]> = {};
-  subCrates.forEach((c) => {
+  crates.filter((c) => c.parentId).forEach((c) => {
     if (!subMap[c.parentId!]) subMap[c.parentId!] = [];
     subMap[c.parentId!].push(c);
   });
@@ -120,26 +119,37 @@ export default function CratesPage() {
             </svg>
           </Link>
 
-          {/* ── Crates grid ──────────────────────────────────────── */}
+          {/* ── Crates list ──────────────────────────────────────── */}
           {topLevel.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="px-4 sm:px-8 pt-4 pb-4 grid grid-cols-2 gap-3">
-              {topLevel.map((crate) => (
-                <CrateCard
-                  key={crate.id}
-                  crate={crate}
-                  subCrates={subMap[crate.id] ?? []}
-                  confirming={confirmId === crate.id}
-                  deleting={deleting && confirmId === crate.id}
-                  onNavigate={() => router.push(`/crates/${crate.id}`)}
-                  onEdit={(e) => { e.stopPropagation(); router.push(`/crates/${crate.id}/edit`); }}
-                  onAskDelete={(e) => { e.stopPropagation(); setConfirmId(crate.id); }}
-                  onCancelDelete={(e) => { e.stopPropagation(); setConfirmId(null); }}
-                  onConfirmDelete={(e) => { e.stopPropagation(); handleDelete(crate.id); }}
-                />
-              ))}
-            </div>
+            topLevel.map((crate) => {
+              const subs = subMap[crate.id] ?? [];
+              return (
+                <div key={crate.id}>
+                  {/* Parent row */}
+                  <CrateRow
+                    crate={crate}
+                    hasSubs={subs.length > 0}
+                    confirming={confirmId === crate.id}
+                    deleting={deleting && confirmId === crate.id}
+                    onNavigate={() => router.push(`/crates/${crate.id}`)}
+                    onEdit={(e) => { e.stopPropagation(); router.push(`/crates/${crate.id}/edit`); }}
+                    onAskDelete={(e) => { e.stopPropagation(); setConfirmId(crate.id); }}
+                    onCancelDelete={(e) => { e.stopPropagation(); setConfirmId(null); }}
+                    onConfirmDelete={(e) => { e.stopPropagation(); handleDelete(crate.id); }}
+                  />
+                  {/* Sub-crate rows */}
+                  {subs.map((sub, i) => (
+                    <SubCrateRow
+                      key={sub.id}
+                      crate={sub}
+                      isLast={i === subs.length - 1}
+                    />
+                  ))}
+                </div>
+              );
+            })
           )}
         </div>
       )}
@@ -149,14 +159,14 @@ export default function CratesPage() {
   );
 }
 
-/* ─── Crate card ─────────────────────────────────────────────────────────── */
+/* ─── Crate row (parent) ─────────────────────────────────────────────────── */
 
-function CrateCard({
-  crate, subCrates, confirming, deleting,
+function CrateRow({
+  crate, hasSubs, confirming, deleting,
   onNavigate, onEdit, onAskDelete, onCancelDelete, onConfirmDelete,
 }: {
   crate: CrateWithCount;
-  subCrates: CrateWithCount[];
+  hasSubs: boolean;
   confirming: boolean;
   deleting: boolean;
   onNavigate: () => void;
@@ -167,58 +177,40 @@ function CrateCard({
 }) {
   return (
     <div
-      onClick={onNavigate}
-      className="flex flex-col cursor-pointer rounded-[12px] overflow-hidden transition-opacity active:opacity-70"
-      style={{
-        background:  "var(--bg2)",
-        border:      "0.5px solid var(--rule2)",
-        borderLeft:  `3px solid ${crate.color}`,
-        minHeight:   148,
-      }}
+      className="group"
+      style={{ borderBottom: hasSubs ? "none" : "0.5px solid var(--rule)" }}
     >
-      <div className="flex-1 flex flex-col p-4 gap-1">
-        {/* Color dot + name */}
-        <p className="text-[14px] font-medium leading-[1.25] break-words"
-          style={{ color: "var(--t1)" }}>
-          {crate.name}
-        </p>
-
-        {/* Description */}
-        {crate.description && (
-          <p className="text-[11px] leading-[1.4] line-clamp-2 mt-[1px]"
-            style={{ color: "var(--t3)" }}>
-            {crate.description}
+      <div
+        onClick={onNavigate}
+        className="flex items-center gap-3 px-5 sm:px-8 py-[14px] cursor-pointer transition-opacity active:opacity-70"
+        style={{ borderLeft: `3px solid ${crate.color}` }}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] font-medium leading-[1.2]" style={{ color: "var(--t1)" }}>
+            {crate.name}
           </p>
-        )}
-
-        {/* Sub-crate indicator */}
-        {subCrates.length > 0 && (
-          <p className="text-[10px] mt-1" style={{ color: "var(--t4)" }}>
-            {subCrates.length} sub-{subCrates.length === 1 ? "crate" : "crates"}
-          </p>
-        )}
-
-        {/* Spacer + count */}
-        <div className="mt-auto pt-3 flex items-baseline gap-1">
-          <span
-            className="text-[26px] font-medium tracking-[-0.04em] leading-none"
-            style={{ color: crate.color, fontFeatureSettings: '"tnum"' }}
-          >
-            {crate.trackCount}
-          </span>
-          <span className="text-[11px]" style={{ color: "var(--t4)" }}>
-            {crate.trackCount === 1 ? "track" : "tracks"}
-          </span>
+          {crate.description && (
+            <p className="text-[11px] mt-[2px] line-clamp-1" style={{ color: "var(--t3)" }}>
+              {crate.description}
+            </p>
+          )}
         </div>
+        <span
+          className="text-[15px] font-medium shrink-0"
+          style={{ color: crate.color, fontFeatureSettings: '"tnum"' }}
+        >
+          {crate.trackCount}
+        </span>
+        <ChevronIcon />
       </div>
 
       {/* Actions */}
       <div
-        className="px-4 py-2 flex items-center justify-between"
-        style={{ borderTop: "0.5px solid var(--rule)" }}
+        className="px-5 sm:px-8 pb-[10px] flex items-center gap-3"
+        style={{ borderLeft: `3px solid ${crate.color}`, borderBottom: "0.5px solid var(--rule)", marginTop: -4 }}
       >
         {confirming ? (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2">
             <button type="button" onClick={onConfirmDelete} disabled={deleting}
               className="text-[11px] text-red-400 font-medium disabled:opacity-50">
               {deleting ? "…" : "Delete"}
@@ -246,6 +238,65 @@ function CrateCard({
   );
 }
 
+/* ─── Sub-crate row ──────────────────────────────────────────────────────── */
+
+function SubCrateRow({ crate, isLast }: { crate: CrateWithCount; isLast: boolean }) {
+  return (
+    <Link
+      href={`/crates/${crate.id}`}
+      className="flex items-center gap-2.5 pr-5 sm:pr-8 py-[11px] transition-opacity active:opacity-70"
+      style={{
+        paddingLeft:    "20px",
+        borderBottom:  "0.5px solid var(--rule)",
+        borderLeft:    "3px solid transparent",
+        background:    "var(--bg)",
+      }}
+    >
+      {/* L-connector */}
+      <div className="relative shrink-0 self-stretch" style={{ width: 20 }}>
+        {/* Vertical segment — full height for non-last, top-to-middle for last */}
+        <div
+          className="absolute w-px"
+          style={{
+            left:       9,
+            top:        0,
+            bottom:     isLast ? "50%" : 0,
+            background: "var(--rule2)",
+          }}
+        />
+        {/* Horizontal arm */}
+        <div
+          className="absolute h-px"
+          style={{
+            left:       9,
+            right:      0,
+            top:        "50%",
+            background: "var(--rule2)",
+          }}
+        />
+      </div>
+
+      {/* Crate color dot */}
+      <span className="w-[7px] h-[7px] rounded-full shrink-0"
+        style={{ background: crate.color }} />
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px]" style={{ color: "var(--t2)" }}>
+          {crate.name}
+        </p>
+      </div>
+
+      <span
+        className="text-[12px] shrink-0"
+        style={{ color: "var(--t3)", fontFeatureSettings: '"tnum"' }}
+      >
+        {crate.trackCount}
+      </span>
+      <ChevronIcon small />
+    </Link>
+  );
+}
+
 /* ─── Empty state ────────────────────────────────────────────────────────── */
 
 function EmptyState() {
@@ -264,5 +315,18 @@ function EmptyState() {
         + Create your first crate
       </Link>
     </div>
+  );
+}
+
+/* ─── Icons ──────────────────────────────────────────────────────────────── */
+
+function ChevronIcon({ small }: { small?: boolean }) {
+  const size = small ? 12 : 14;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}
+      style={{ color: "var(--t4)", flexShrink: 0 }}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+    </svg>
   );
 }
