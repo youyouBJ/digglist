@@ -9,7 +9,7 @@
 | Sprint | Nom | Sessions est. | État |
 |--------|-----|---------------|------|
 | 0 | UX Quick Wins | 1–2 | **À lancer** |
-| 2A | Sets — Infrastructure | 2–3 | À faire |
+| 2A | Sets — Infrastructure | 2–3 | ✅ |
 | 2B | Sets — Flow + SC Timestamp | 2–3 | À faire |
 | 3A | Rich Media — Bandcamp + TikTok preview | 1 | À faire |
 | 3B | Rich Media — Spotify + Apple Music | 2–3 | À faire |
@@ -79,11 +79,10 @@ alter table public.tracks
 
 | Ordre | ID | Description | Fichier | Complexité | Dépendances |
 |-------|----|-------------|---------|-----------|-------------|
-| 1 | DB-SET-01 | Migration SQL sets + set_id sur tracks | Supabase Dashboard | S | aucune |
-| 2 | LIB-SET-01 | `lib/types.ts` + `lib/supabase-sets.ts` (Set type, CRUD) | lib/ | S | DB-SET-01 |
-| 3 | FEAT-SET-01 | Page `/sets` — liste des sets sauvegardés | `app/sets/page.tsx` | M | LIB-SET-01 |
-| 4 | NAV-01 | Remplacer "You" par "Sets" dans BottomNav | `BottomNav.tsx` | S | FEAT-SET-01 |
-| 5 | NAV-02 | Déplacer logout/profil dans le Header | `Header.tsx` ou nouveau composant | S | NAV-01 |
+| 1 | DB-SET-01 | Migration SQL sets + set_id sur tracks | Supabase Dashboard | S | aucune | ✅ |
+| 2 | LIB-SET-01 | `lib/types.ts` + `lib/supabase-sets.ts` (Set type, CRUD) | lib/ | S | DB-SET-01 | ✅ |
+| 3 | FEAT-SET-01 | Pages `/sets`, `/sets/new`, `/sets/[id]`, `/sets/[id]/edit` | `app/sets/` | M | LIB-SET-01 | ✅ |
+| 4 | NAV-01 | Remplacer Crates par Sets dans BottomNav | `BottomNav.tsx` | S | FEAT-SET-01 | ✅ |
 
 **Dépendance clé** : NAV-01 ne peut pas précéder FEAT-SET-01 — l'onglet doit pointer sur une page existante.
 
@@ -276,7 +275,7 @@ create policy "Public read by share_token — crates"
 |-------|-----|------|
 | 1 | Stabilisation Beta | ✅ Complète |
 | Sprint 0 | UX Quick Wins | **À lancer** |
-| 2A | Sets System — Infrastructure | À faire |
+| 2A | Sets System — Infrastructure | ✅ |
 | 2B | Sets System — Flow + SC Timestamp | À faire |
 | 3A | Rich Media — Bandcamp + TikTok | À faire |
 | 3B | Rich Media — Spotify + Apple Music | À faire |

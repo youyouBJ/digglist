@@ -18,23 +18,26 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Phase 1 complète. Sprint 0 UX Quick Wins terminé (7/7). Prochain : Sprint 2A.**
+**Beta stable. Sprint 0 ✅ Sprint 2A infrastructure ✅. Prochain : Sprint 2B (Sets UX).**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 2A — Sets System
+## Prochaine tâche recommandée : Sprint 2B — Sets UX
 
-**Sprint 0 terminé. 7/7 tâches faites. ✅**
+**Sprint 2A — Sets System infrastructure terminé. ✅**
 
-1. ~~BUG-02 — Back button conditionnel~~ ✅
-2. ~~UX-01 — Rating ★ + crate dots dans les rows~~ ✅
-3. ~~UX-DENSITY-01 — Notes line-clamp-1 + timestamp range~~ ✅
-4. ~~CRATES-COUNT-01 — Crate filter pills avec count~~ ✅
-5. ~~SORT-01 — Tri Library et IDs (Date ↓, Rating ↓, A–Z)~~ ✅
-6. ~~UX-FOUND-01 — "Mark as found" sheet légère~~ ✅
-7. ~~CRATES-VIS-02 — Hiérarchie visuelle sous-crates~~ ✅
+Ce qui est fait :
+- Table `sets` + `tracks.set_id` en DB (migration idempotente exécutée)
+- `lib/supabase-sets.ts` : CRUD complet + `getSetTracks`
+- `lib/types.ts` : type `MixSet`, `MixSetWithCount`, `Track.setId`
+- Pages : `/sets`, `/sets/new`, `/sets/[id]`, `/sets/[id]/edit`
+- BottomNav : Crates → Sets (icône waveform)
+- Sheet "Log moment" sur `/sets/[id]` : mode Track / ID needed
 
-Prochaine étape : Sprint 2A — Sets System (nécessite migration SQL).
+Prochaine étape Sprint 2B :
+- Lier les tracks existants à des sets depuis `/add-track` et `/ids/new`
+- Afficher le set d'origine sur la page détail d'un track
+- Accès aux Crates depuis Library (lien header ou section)
 
 ---
 
@@ -90,7 +93,7 @@ Aucun. BUG-02 corrigé (2026-05-12).
 - "Mark as found" flow dédié (actuellement ouvre le form edit complet)
 - Tri / sort dans Library et IDs
 - Crate pills sans count de tracks
-- Sets — onglet, page, flow dédié (Sprint 2A/2B)
+- ~~Sets — onglet, page, flow dédié~~ ✅ Sprint 2A
 - PWA manifest + Add to Home Screen (Sprint 6)
 - Partage public (Sprint 6)
 - Embed SoundCloud avec timestamp (Sprint 2B)
@@ -102,8 +105,9 @@ Aucun. BUG-02 corrigé (2026-05-12).
 ## Fichiers clés à connaître
 
 ```
-lib/types.ts              → type Track (source de vérité TypeScript)
-lib/supabase-tracks.ts    → TrackRow, toTrack, toRow, CRUD functions
+lib/types.ts              → types Track, MixSet, MixSetWithCount, Crate (source de vérité TypeScript)
+lib/supabase-tracks.ts    → TrackRow, toTrack, toRow, CRUD functions (inclut set_id)
+lib/supabase-sets.ts      → MixSet CRUD, getSetTracks
 lib/supabase-crates.ts    → Crate CRUD, syncTrackCrates
 lib/timestamp.ts          → extractTimestampFromUrl, parseManualTimestamp, formatTimestamp
 lib/constants.ts          → PLATFORMS, CRATE_COLORS (24 couleurs), STATUSES (dépréciées UI)
@@ -114,6 +118,10 @@ app/library/page.tsx      → Library + TrackRow (rating manquant en liste)
 app/ids/page.tsx          → IDs + IdRow
 app/add-track/page.tsx    → Form complet avec videoAuthor
 app/crates/[id]/page.tsx  → Utilise correctement record_type (plus status)
+app/sets/page.tsx         → Liste des sets
+app/sets/new/page.tsx     → Créer un set (URL + fetch metadata)
+app/sets/[id]/page.tsx    → Détail set + moments + sheet "Log moment"
+app/sets/[id]/edit/page.tsx → Éditer titre + notes d'un set
 ```
 
 ---
