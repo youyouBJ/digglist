@@ -4,6 +4,7 @@ export type Track = {
   artist: string;
   label: string;
   recordType: string;   // 'track' | 'id_needed'
+  rating: number | null;
   sourcePlatform: string;
   sourceUrl: string;
   imageUrl: string;

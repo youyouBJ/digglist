@@ -9,6 +9,7 @@ export type TrackRow = {
   artist: string;
   label: string;
   record_type: string;
+  rating?: number | null;
   source_platform: string;
   source_url: string;
   image_url: string;
@@ -27,6 +28,7 @@ export function toTrack(row: TrackRow): Track {
     artist:          row.artist,
     label:           row.label,
     recordType:      row.record_type,
+    rating:          row.rating ?? null,
     sourcePlatform:  row.source_platform,
     sourceUrl:       row.source_url,
     imageUrl:        row.image_url,

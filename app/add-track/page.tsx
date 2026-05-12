@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createTrack } from "@/lib/supabase-tracks";
 import { getCrates, addTrackToCrate, type Crate } from "@/lib/supabase-crates";
-import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
+import { PLATFORMS, EMPTY_TRACK_FORM } from "@/lib/constants";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
@@ -15,22 +14,20 @@ import { supabase } from "@/lib/supabase";
 import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 
 export default function AddTrackPage() {
-  const user   = useRequireAuth();
-  const router = useRouter();
+  const user = useRequireAuth();
 
   const [form, setForm]     = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [saved, setSaved]   = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  const [fetchUrl, setFetchUrl]         = useState("");
   const [fetching, setFetching]         = useState(false);
   const [fetchPhase, setFetchPhase]     = useState<"idle" | "success" | "error">("idle");
   const [fetchMsg, setFetchMsg]         = useState("");
   const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
 
-  /* Crates */
-  const [allCrates, setAllCrates]           = useState<Crate[]>([]);
+  const [rating, setRating]                     = useState<number | null>(null);
+  const [allCrates, setAllCrates]               = useState<Crate[]>([]);
   const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -38,18 +35,15 @@ export default function AddTrackPage() {
     getCrates().then(setAllCrates).catch(() => {});
   }, [user]);
 
-  // Pre-fill from quick-add via URL search params
+  /* Pre-fill from quick-add redirect */
   useEffect(() => {
-    const params     = new URLSearchParams(window.location.search);
-    const prefillUrl = params.get("url");
+    const params          = new URLSearchParams(window.location.search);
+    const prefillUrl      = params.get("url");
     if (!prefillUrl) return;
-
     const prefillPlatform = params.get("platform") ?? "";
-    const prefillStatus   = params.get("status") ?? "";
+    const prefillStatus   = params.get("status")   ?? "";
     const tsStr           = params.get("ts");
     const ts              = tsStr ? parseInt(tsStr, 10) : null;
-
-    setFetchUrl(prefillUrl);
     setTimestamp(Number.isFinite(ts) && ts! > 0 ? ts : extractTimestampFromUrl(prefillUrl));
     setForm((prev) => ({
       ...prev,
@@ -58,7 +52,7 @@ export default function AddTrackPage() {
       artist:   params.get("artist")   ?? prev.artist,
       imageUrl: params.get("imageUrl") ?? prev.imageUrl,
       platform: (PLATFORMS as readonly string[]).includes(prefillPlatform) ? prefillPlatform : prev.platform,
-      status:   (STATUSES  as readonly string[]).includes(prefillStatus)   ? prefillStatus   : prev.status,
+      status:   prefillStatus || prev.status,
     }));
   }, []);
 
@@ -69,7 +63,7 @@ export default function AddTrackPage() {
   }
 
   async function handleFetch() {
-    const trimmed = fetchUrl.trim();
+    const trimmed = form.url.trim();
     if (!trimmed) return;
     setFetching(true);
     setFetchPhase("idle");
@@ -92,7 +86,7 @@ export default function AddTrackPage() {
       }));
       setTimestamp(data.timestamp ?? extractTimestampFromUrl(trimmed));
       setFetchPhase("success");
-      setFetchMsg("Metadata imported — check the fields below.");
+      setFetchMsg("Metadata imported.");
     } catch (err) {
       setFetchPhase("error");
       setFetchMsg(err instanceof Error ? err.message : "Could not fetch metadata.");
@@ -111,6 +105,7 @@ export default function AddTrackPage() {
         artist:          form.artist,
         label:           form.label,
         recordType:      "track",
+        rating,
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,
@@ -120,9 +115,7 @@ export default function AddTrackPage() {
         notes:           form.notes,
         sourceTimestamp: sourceTimestamp ?? extractTimestampFromUrl(form.url),
       });
-      await Promise.all(
-        selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id))
-      );
+      await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save track.");
@@ -134,37 +127,31 @@ export default function AddTrackPage() {
   function handleAddAnother() {
     setSaved(false);
     setForm(EMPTY_TRACK_FORM);
-    setFetchUrl("");
     setFetchPhase("idle");
     setFetchMsg("");
     setTimestamp(null);
     setError(null);
     setSelectedCrateIds([]);
+    setRating(null);
   }
 
-  const isIds = form.status === "IDs Needed";
+  const tsFromUrl = sourceTimestamp ?? extractTimestampFromUrl(form.url);
 
   return (
-    <main
-      className="min-h-screen flex flex-col pb-24 sm:pb-6"
-      style={{ background: "var(--bg)", color: "var(--t1)" }}
-    >
+    <main className="min-h-screen flex flex-col pb-24 sm:pb-6"
+      style={{ background: "var(--bg)", color: "var(--t1)" }}>
       <Header />
 
       {/* ── Back bar ─────────────────────────────────────────────── */}
       <div className="flex items-center px-5 sm:px-8 pt-4 pb-3 sm:pt-6">
-        <Link
-          href="/library"
-          className="flex items-center gap-2 text-[13px] transition-colors"
-          style={{ color: "var(--teal)" }}
-        >
+        <Link href="/library" className="flex items-center gap-2 text-[13px]"
+          style={{ color: "var(--teal)" }}>
           <ArrowLeft />
           Library
         </Link>
       </div>
 
-      {/* ── Page title ───────────────────────────────────────────── */}
-      <div className="px-5 sm:px-8 pb-5">
+      <div className="px-5 sm:px-8 pb-4">
         <h2 className="text-[22px] font-medium tracking-[-0.03em]"
           style={{ color: "var(--t1)" }}>
           Add a track
@@ -189,19 +176,14 @@ export default function AddTrackPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleAddAnother}
-              className="px-5 py-[10px] rounded-[10px] text-[13px] transition-colors"
-              style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
-            >
+            <button type="button" onClick={handleAddAnother}
+              className="px-5 py-[10px] rounded-[10px] text-[13px]"
+              style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}>
               Add another
             </button>
-            <Link
-              href="/library"
-              className="px-5 py-[10px] rounded-[10px] text-[13px] font-medium transition-colors"
-              style={{ background: "var(--t1)", color: "var(--bg)" }}
-            >
+            <Link href="/library"
+              className="px-5 py-[10px] rounded-[10px] text-[13px] font-medium"
+              style={{ background: "var(--t1)", color: "var(--bg)" }}>
               View Library
             </Link>
           </div>
@@ -209,122 +191,98 @@ export default function AddTrackPage() {
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col flex-1">
 
-          {/* ── Import from URL ──────────────────────────────────── */}
-          <div style={{ borderTop: "0.5px solid var(--rule)" }}>
-            <p
-              className="px-5 sm:px-8 pt-[14px] pb-[6px] text-[10px] tracking-[0.12em] uppercase"
-              style={{ color: "var(--t4)" }}
-            >
-              Import from URL
-            </p>
-
-            {/* URL input row */}
-            <div
-              className="mx-5 sm:mx-8 mb-1 flex items-center gap-3 rounded-[10px] px-4"
-              style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
-            >
-              <input
-                type="url"
-                placeholder="Paste a YouTube, SoundCloud, Discogs URL…"
-                value={fetchUrl}
-                onChange={(e) => setFetchUrl(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleFetch(); } }}
-                className="flex-1 py-[13px] text-[14px] bg-transparent outline-none"
-                style={{ color: "var(--t1)" }}
-              />
-              <button
-                type="button"
-                onClick={handleFetch}
-                disabled={fetching || !fetchUrl.trim()}
-                className="shrink-0 text-[12px] font-medium py-[7px] px-[12px] rounded-[7px] transition-colors disabled:opacity-40"
-                style={{ background: "var(--bg4)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
-              >
-                {fetching ? "Fetching…" : "Fetch"}
-              </button>
-            </div>
-
-            {/* Fetch status */}
-            {fetchPhase !== "idle" && (
-              <p
-                className="px-5 sm:px-8 pt-1 pb-3 text-[12px]"
-                style={{ color: fetchPhase === "error" ? "#f87171" : "var(--teal)" }}
-              >
-                {fetchMsg}
-              </p>
-            )}
-
-            {/* Timestamp badge */}
-            {sourceTimestamp !== null && (
-              <p
-                className="px-5 sm:px-8 pb-3 text-[12px] font-medium"
-                style={{
-                  color:               "var(--amber)",
-                  fontFamily:          "var(--font-jb-mono, monospace)",
-                  fontFeatureSettings: '"tnum"',
-                }}
-              >
-                ⏱ {formatTimestamp(sourceTimestamp)}
-              </p>
-            )}
-
-            {/* Cover preview */}
-            {form.imageUrl && (
-              <div
-                className="mx-5 sm:mx-8 mb-4 flex items-center gap-3 rounded-[10px] px-4 py-3"
-                style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
-              >
-                <img
-                  src={form.imageUrl}
-                  alt="Cover"
-                  className="w-11 h-11 rounded-lg object-cover shrink-0"
-                  style={{ border: "0.5px solid var(--rule2)" }}
+          {/* ── Title + Artist ────────────────────────────────────── */}
+          <div className="px-5 sm:px-8 py-5" style={{ borderTop: "0.5px solid var(--rule)" }}>
+            <div className="flex items-start gap-4">
+              {form.imageUrl && (
+                <div className="relative shrink-0 mt-[3px]">
+                  <img
+                    src={form.imageUrl}
+                    alt="Cover"
+                    className="object-cover rounded-[8px] shrink-0"
+                    style={{ width: 56, height: 56, border: "0.5px solid var(--rule2)" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set("imageUrl", "")}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                    style={{ background: "var(--bg2)", border: "0.5px solid var(--rule2)", color: "var(--t3)" }}
+                    aria-label="Remove cover"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  placeholder="Track title"
+                  required
+                  value={form.title}
+                  onChange={(e) => set("title", e.target.value)}
+                  className="hero-title w-full bg-transparent outline-none"
                 />
-                <p className="text-[12px] flex-1 truncate" style={{ color: "var(--t3)" }}>
-                  Cover image attached
-                </p>
-                <button
-                  type="button"
-                  onClick={() => set("imageUrl", "")}
-                  className="shrink-0 text-[11px] transition-colors"
-                  style={{ color: "var(--t4)" }}
-                  aria-label="Remove cover"
-                >
-                  ✕
-                </button>
+                <input
+                  type="text"
+                  placeholder="Artist"
+                  value={form.artist}
+                  onChange={(e) => set("artist", e.target.value)}
+                  className="hero-artist w-full bg-transparent outline-none mt-2"
+                />
               </div>
-            )}
+            </div>
           </div>
 
           {error && (
             <p className="px-5 sm:px-8 mb-2 text-[13px] text-red-400">{error}</p>
           )}
 
-          {/* ── Section: Track info ──────────────────────────────── */}
-          <FormSection label="Track info">
-            <FormRow label="Title" required>
-              <input
-                type="text"
-                placeholder={isIds ? "Unknown track" : "Track title"}
-                required
-                value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                className="form-input"
-              />
-            </FormRow>
-            <FormRow label="Artist" last>
-              <input
-                type="text"
-                placeholder={isIds ? "Unknown artist" : "Artist name"}
-                value={form.artist}
-                onChange={(e) => set("artist", e.target.value)}
-                className="form-input"
-              />
-            </FormRow>
-          </FormSection>
-
-          {/* ── Section: Source ──────────────────────────────────── */}
+          {/* ── Source ───────────────────────────────────────────── */}
           <FormSection label="Source">
-            <FormRow label="Platform">
+            {/* URL + Fetch */}
+            <div className="px-5 sm:px-8 pt-1 pb-3">
+              <div
+                className="flex items-center gap-2 rounded-[10px] px-3.5"
+                style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
+              >
+                <input
+                  type="url"
+                  placeholder="YouTube, SoundCloud, Discogs… (optional)"
+                  value={form.url}
+                  onChange={(e) => set("url", e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleFetch(); } }}
+                  className="flex-1 py-[13px] text-[14px] bg-transparent outline-none"
+                  style={{ color: "var(--t1)" }}
+                />
+                {form.url.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleFetch}
+                    disabled={fetching}
+                    className="shrink-0 text-[12px] font-medium py-[7px] px-[12px] rounded-[7px] disabled:opacity-40"
+                    style={{ background: "var(--bg4)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
+                  >
+                    {fetching ? "…" : "Fetch"}
+                  </button>
+                )}
+              </div>
+
+              {fetchPhase !== "idle" && (
+                <p className="mt-2 text-[12px]"
+                  style={{ color: fetchPhase === "error" ? "#f87171" : "var(--teal)" }}>
+                  {fetchMsg}
+                </p>
+              )}
+
+              {tsFromUrl !== null && (
+                <p className="mt-1 text-[12px] font-medium"
+                  style={{ color: "var(--amber)", fontFamily: "var(--font-jb-mono, monospace)", fontFeatureSettings: '"tnum"' }}>
+                  ⏱ {formatTimestamp(tsFromUrl)}
+                </p>
+              )}
+            </div>
+
+            <FormRow label="Platform" last>
               <select
                 value={form.platform}
                 onChange={(e) => set("platform", e.target.value)}
@@ -333,19 +291,19 @@ export default function AddTrackPage() {
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </FormRow>
-            <FormRow label="URL" last>
+          </FormSection>
+
+          {/* ── Details ──────────────────────────────────────────── */}
+          <FormSection label="Details">
+            <FormRow label="Label">
               <input
-                type="url"
-                placeholder="https://…"
-                value={form.url}
-                onChange={(e) => set("url", e.target.value)}
+                type="text"
+                placeholder="Warp, Ninja Tune, XL…"
+                value={form.label}
+                onChange={(e) => set("label", e.target.value)}
                 className="form-input"
               />
             </FormRow>
-          </FormSection>
-
-          {/* ── Section: Tags ────────────────────────────────────── */}
-          <FormSection label="Tags">
             <FormRow label="Genre">
               <input
                 type="text"
@@ -355,7 +313,7 @@ export default function AddTrackPage() {
                 className="form-input"
               />
             </FormRow>
-            <FormRow label="Mood">
+            <FormRow label="Mood" last>
               <input
                 type="text"
                 placeholder="Chill, Dark, Uplifting…"
@@ -364,57 +322,30 @@ export default function AddTrackPage() {
                 className="form-input"
               />
             </FormRow>
-            <FormRow label="Label" last>
-              <input
-                type="text"
-                placeholder="Warp, Ninja Tune, XL…"
-                value={form.label}
-                onChange={(e) => set("label", e.target.value)}
-                className="form-input"
-              />
-            </FormRow>
           </FormSection>
 
-          {/* ── Section: Status ──────────────────────────────────── */}
-          <FormSection label="Status">
-            <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
-              {STATUSES.map((s) => {
-                const active = form.status === s;
-                const ids    = s === "IDs Needed";
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => set("status", s)}
-                    className="px-[13px] py-[6px] rounded-full text-[12px] font-medium transition-colors"
-                    style={active
-                      ? ids
-                        ? { background: "var(--amber-fill)", color: "var(--amber)", border: "0.5px solid var(--amber-rule)" }
-                        : { background: "var(--t1)", color: "var(--bg)", border: "0.5px solid transparent" }
-                      : { background: "var(--bg3)", color: "var(--t3)", border: "0.5px solid var(--rule2)" }
-                    }
-                  >
-                    {s}
-                  </button>
-                );
-              })}
+          {/* ── Rating ───────────────────────────────────────────── */}
+          <FormSection label="Rating">
+            <div className="px-5 sm:px-8 py-4">
+              <StarRating value={rating} onChange={setRating} />
             </div>
           </FormSection>
 
-          {/* ── Section: Notes ───────────────────────────────────── */}
+          {/* ── Notes ────────────────────────────────────────────── */}
           <FormSection label="Notes">
             <div className="px-5 sm:px-8 py-4">
               <textarea
-                rows={4}
+                rows={3}
                 placeholder="Context, feelings, where you found it…"
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 className="form-input w-full resize-none"
+                style={{ textAlign: "left" }}
               />
             </div>
           </FormSection>
 
-          {/* ── Section: Crates ──────────────────────────────────── */}
+          {/* ── Crates ───────────────────────────────────────────── */}
           {allCrates.length > 0 && (
             <FormSection label="Crates">
               <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
@@ -429,7 +360,7 @@ export default function AddTrackPage() {
                           selected ? prev.filter((x) => x !== c.id) : [...prev, c.id]
                         )
                       }
-                      className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium transition-colors"
+                      className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium"
                       style={selected
                         ? { background: `${c.color}14`, color: c.color, border: `0.5px solid ${c.color}40` }
                         : { background: "var(--bg3)", color: "var(--t4)", border: "0.5px solid var(--rule2)" }
@@ -453,25 +384,40 @@ export default function AddTrackPage() {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-11 rounded-[10px] text-[13px] font-medium transition-colors disabled:opacity-50"
+              className="flex-1 h-11 rounded-[10px] text-[13px] font-medium disabled:opacity-50"
               style={{ background: "var(--t1)", color: "var(--bg)" }}
             >
               {saving ? "Saving…" : "Save track"}
             </button>
             <Link
               href="/library"
-              className="h-11 px-5 flex items-center rounded-[10px] text-[13px] transition-colors"
+              className="h-11 px-5 flex items-center rounded-[10px] text-[13px]"
               style={{ background: "var(--bg3)", color: "var(--t3)", border: "0.5px solid var(--rule2)" }}
             >
               Cancel
             </Link>
           </div>
+
         </form>
       )}
 
       <BottomNav />
 
       <style>{`
+        .hero-title {
+          font-size: 22px;
+          font-weight: 500;
+          letter-spacing: -0.02em;
+          color: var(--t1);
+          line-height: 1.25;
+        }
+        .hero-title::placeholder { color: var(--t4); }
+        .hero-artist {
+          font-size: 15px;
+          color: var(--t3);
+          line-height: 1.4;
+        }
+        .hero-artist::placeholder { color: var(--t4); }
         .form-input {
           width: 100%;
           background: transparent;
@@ -489,15 +435,48 @@ export default function AddTrackPage() {
   );
 }
 
-/* ─── Form layout helpers ────────────────────────────────────────────────── */
+/* ─── Star rating ────────────────────────────────────────────────────────── */
+
+function StarRating({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = value !== null && star <= value;
+        return (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(value === star ? null : star)}
+            className="p-2 transition-transform active:scale-90"
+            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24"
+              fill={filled ? "var(--amber)" : "none"}
+              stroke={filled ? "var(--amber)" : "var(--rule3)"}
+              strokeWidth={1.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+        );
+      })}
+      {value !== null && (
+        <span className="ml-2 text-[12px]" style={{ color: "var(--amber)" }}>
+          {value}/5
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ─── Form helpers ───────────────────────────────────────────────────────── */
 
 function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ borderTop: "0.5px solid var(--rule)" }}>
-      <p
-        className="px-5 sm:px-8 pt-[14px] pb-[6px] text-[10px] tracking-[0.12em] uppercase"
-        style={{ color: "var(--t4)" }}
-      >
+      <p className="px-5 sm:px-8 pt-[14px] pb-[6px] text-[10px] tracking-[0.12em] uppercase"
+        style={{ color: "var(--t4)" }}>
         {label}
       </p>
       {children}
@@ -505,9 +484,7 @@ function FormSection({ label, children }: { label: string; children: React.React
   );
 }
 
-function FormRow({
-  label, children, last, required,
-}: {
+function FormRow({ label, children, last, required }: {
   label: string;
   children: React.ReactNode;
   last?: boolean;
@@ -532,8 +509,7 @@ function FormRow({
 
 function ArrowLeft() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={1.5}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
     </svg>
   );

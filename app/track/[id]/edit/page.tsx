@@ -8,7 +8,7 @@ import {
   getCrates, getTrackCrates, syncTrackCrates,
   type Crate,
 } from "@/lib/supabase-crates";
-import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
+import { PLATFORMS, EMPTY_TRACK_FORM } from "@/lib/constants";
 import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
@@ -24,6 +24,7 @@ export default function EditTrackPage() {
   const [track, setTrack]                     = useState<Track | null | undefined>(undefined);
   const [form, setForm]                       = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [storedTimestamp, setStoredTimestamp] = useState<number | null>(null);
+  const [rating, setRating]                   = useState<number | null>(null);
   const [saving, setSaving]                   = useState(false);
   const [error, setError]                     = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export default function EditTrackPage() {
       .then(([t, tc, ac]) => {
         if (!t) { setTrack(null); return; }
         setTrack(t);
+        setRating(t.rating);
         setStoredTimestamp(t.sourceTimestamp);
         setForm({
           title:    t.title,
@@ -74,6 +76,7 @@ export default function EditTrackPage() {
         artist:          form.artist,
         label:           form.label,
         recordType:      track!.recordType,
+        rating,
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,
@@ -261,29 +264,10 @@ export default function EditTrackPage() {
           </FormRow>
         </FormSection>
 
-        {/* ── Section: Status ──────────────────────────────────────── */}
-        <FormSection label="Status">
-          <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
-            {STATUSES.map((s) => {
-              const active = form.status === s;
-              const ids    = s === "IDs Needed";
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => set("status", s)}
-                  className="px-[13px] py-[6px] rounded-full text-[12px] font-medium transition-colors"
-                  style={active
-                    ? ids
-                      ? { background: "var(--amber-fill)", color: "var(--amber)", border: "0.5px solid var(--amber-rule)" }
-                      : { background: "var(--t1)", color: "var(--bg)", border: "0.5px solid transparent" }
-                    : { background: "var(--bg3)", color: "var(--t3)", border: "0.5px solid var(--rule2)" }
-                  }
-                >
-                  {s}
-                </button>
-              );
-            })}
+        {/* ── Section: Rating ──────────────────────────────────────── */}
+        <FormSection label="Rating">
+          <div className="px-5 sm:px-8 py-4">
+            <StarRating value={rating} onChange={setRating} />
           </div>
         </FormSection>
 
@@ -369,6 +353,41 @@ export default function EditTrackPage() {
         select.form-input option { background: var(--bg2); }
       `}</style>
     </main>
+  );
+}
+
+/* ─── Star rating ────────────────────────────────────────────────────────── */
+
+function StarRating({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const filled = value !== null && star <= value;
+        return (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(value === star ? null : star)}
+            className="p-2 transition-transform active:scale-90"
+            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24"
+              fill={filled ? "var(--amber)" : "none"}
+              stroke={filled ? "var(--amber)" : "var(--rule3)"}
+              strokeWidth={1.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+        );
+      })}
+      {value !== null && (
+        <span className="ml-2 text-[12px]" style={{ color: "var(--amber)" }}>
+          {value}/5
+        </span>
+      )}
+    </div>
   );
 }
 
