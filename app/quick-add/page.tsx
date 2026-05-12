@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { createTrack } from "@/lib/supabase-tracks";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
-import { PLATFORMS, STATUSES } from "@/lib/constants";
+import { PLATFORMS } from "@/lib/constants";
 import { PageLoader } from "@/app/components/ui";
 import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 
@@ -26,7 +26,6 @@ export default function QuickAddPage() {
   const [platform, setPlatform]         = useState("Other");
   const [imageUrl, setImageUrl]         = useState("");
   const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
-  const [status, setStatus]             = useState("To listen");
   const [saving, setSaving]             = useState(false);
   const [saveError, setSaveError]       = useState("");
   const [saved, setSaved]               = useState(false);
@@ -36,22 +35,12 @@ export default function QuickAddPage() {
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didFocus   = useRef(false);
 
-  // P0 — iOS autoFocus: fires when user is confirmed (after auth redirect)
   useEffect(() => {
     if (!user || didFocus.current) return;
     didFocus.current = true;
     const t = setTimeout(() => inputRef.current?.focus(), 150);
     return () => clearTimeout(t);
   }, [user]);
-
-  // Pre-set status from URL param (?status=IDs+Needed)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const preset = params.get("status");
-    if (preset && (STATUSES as readonly string[]).includes(preset)) {
-      setStatus(preset);
-    }
-  }, []);
 
   if (!user) return <PageLoader />;
 
@@ -80,14 +69,12 @@ export default function QuickAddPage() {
       return;
     }
 
-    // Timestamp detected immediately — no need to wait for the API
     const ts = extractTimestampFromUrl(trimmed);
     setTimestamp(ts);
-
-    fetchTimer.current = setTimeout(() => triggerFetch(trimmed, ts), 100);
+    fetchTimer.current = setTimeout(() => triggerFetch(trimmed), 100);
   }
 
-  async function triggerFetch(rawUrl: string, ts: number | null) {
+  async function triggerFetch(rawUrl: string) {
     setPhase("fetching");
     setFetchError("");
     try {
@@ -102,14 +89,8 @@ export default function QuickAddPage() {
       setArtist(data.artist ?? "");
       setPlatform((PLATFORMS as readonly string[]).includes(data.platform) ? data.platform : "Other");
       setImageUrl(data.imageUrl ?? "");
-
-      // Smart IDs Needed: timestamp in a set + no artist identified
-      if (ts !== null && !data.artist) {
-        setStatus("IDs Needed");
-      }
-
       setPhase("ready");
-      inputRef.current?.blur(); // P0: reveal buttons by closing keyboard
+      inputRef.current?.blur();
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : "Could not fetch metadata.");
       setPhase("error");
@@ -123,17 +104,17 @@ export default function QuickAddPage() {
     setSaveError("");
     try {
       await createTrack({
-        title:           title.trim() || (status === "IDs Needed" ? "Unknown track" : url.trim()),
+        title:           title.trim() || url.trim(),
         artist:          artist.trim(),
         label:           "",
-        recordType:      status === "IDs Needed" ? "id_needed" : "track",
+        recordType:      "track",
         rating:          null,
         sourcePlatform:  platform,
         sourceUrl:       url.trim(),
         imageUrl,
         genre:           "",
         mood:            "",
-        status,
+        status:          "To listen",
         notes:           "",
         sourceTimestamp,
         timestampEnd:    null,
@@ -157,7 +138,6 @@ export default function QuickAddPage() {
     `&artist=${encodeURIComponent(artist)}` +
     `&platform=${encodeURIComponent(platform)}` +
     `&imageUrl=${encodeURIComponent(imageUrl)}` +
-    `&status=${encodeURIComponent(status)}` +
     (sourceTimestamp !== null ? `&ts=${sourceTimestamp}` : "");
 
   return (
@@ -177,7 +157,6 @@ export default function QuickAddPage() {
 
       <section className="flex flex-col flex-1 px-4 sm:px-8 pt-8 pb-10 gap-6 max-w-lg mx-auto w-full">
 
-        {/* URL input — border encodes state immediately */}
         <input
           ref={inputRef}
           type="url"
@@ -191,14 +170,12 @@ export default function QuickAddPage() {
           className={`w-full bg-transparent text-white text-xl placeholder:text-white/40 focus:outline-none py-2 border-b transition-colors duration-300 ${inputBorderClass}`}
         />
 
-        {/* Fetch error — actionable, not a dead end */}
         {phase === "error" && fetchError && (
           <p className="text-xs text-amber-400/80 -mt-3 animate-fade-in">
             {fetchError} — type the details below to save anyway.
           </p>
         )}
 
-        {/* Skeleton */}
         {phase === "fetching" && (
           <div className="flex items-center gap-4 animate-fade-in">
             <div className="w-14 h-14 rounded-xl bg-white/8 shrink-0 animate-pulse" />
@@ -214,29 +191,24 @@ export default function QuickAddPage() {
           </div>
         )}
 
-        {/* Preview card — inline editable */}
         {showPreview && (
           <div className="flex items-start gap-4 bg-white/[0.03] rounded-2xl p-4 animate-fade-slide-up">
             {imageUrl ? (
               <img src={imageUrl} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-            ) : status === "IDs Needed" ? (
-              <div className="w-14 h-14 rounded-xl bg-orange-500/10 border border-orange-500/20 shrink-0 flex items-center justify-center text-orange-300/60 text-xl font-bold">
-                ?
-              </div>
             ) : (
               <div className="w-14 h-14 rounded-xl bg-white/8 shrink-0" />
             )}
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <input
                 type="text"
-                placeholder={status === "IDs Needed" ? "Unknown track" : "Track title"}
+                placeholder="Track title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-transparent text-white font-semibold text-base placeholder:text-white/25 focus:outline-none"
               />
               <input
                 type="text"
-                placeholder={status === "IDs Needed" ? "Unknown artist" : "Artist"}
+                placeholder="Artist"
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
                 className="w-full bg-transparent text-white/50 text-sm placeholder:text-white/20 focus:outline-none"
@@ -253,28 +225,6 @@ export default function QuickAddPage() {
           </div>
         )}
 
-        {/* Status pills */}
-        {urlValid && (
-          <div className="flex flex-wrap gap-2 animate-fade-in">
-            {STATUSES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatus(s)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors active:scale-95 ${
-                  status === s
-                    ? s === "IDs Needed"
-                      ? "bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30"
-                      : "bg-white text-black"
-                    : "bg-white/8 text-white/40 hover:bg-white/15 hover:text-white/70"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-
         {saveError && (
           <p className="text-xs text-red-400/80 animate-fade-in">{saveError}</p>
         )}
@@ -286,7 +236,6 @@ export default function QuickAddPage() {
           </div>
         )}
 
-        {/* Actions — mt-auto keeps them in thumb reach with 100dvh */}
         {urlValid && !saved && (
           <div className="flex flex-col gap-3 mt-auto animate-slide-up">
             <button

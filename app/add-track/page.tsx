@@ -26,6 +26,7 @@ export default function AddTrackPage() {
   const [fetchMsg, setFetchMsg]         = useState("");
   const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
   const [tsInput, setTsInput]           = useState("");
+  const [tsEndInput, setTsEndInput]     = useState("");
 
   const [rating, setRating]                     = useState<number | null>(null);
   const [allCrates, setAllCrates]               = useState<Crate[]>([]);
@@ -115,7 +116,7 @@ export default function AddTrackPage() {
         status:          form.status,
         notes:           form.notes,
         sourceTimestamp: finalTs,
-        timestampEnd:    null,
+        timestampEnd:    tsEndParsed,
         videoAuthor:     "",
         trackIdHint:     "",
       });
@@ -135,6 +136,7 @@ export default function AddTrackPage() {
     setFetchMsg("");
     setTimestamp(null);
     setTsInput("");
+    setTsEndInput("");
     setError(null);
     setSelectedCrateIds([]);
     setRating(null);
@@ -142,6 +144,7 @@ export default function AddTrackPage() {
 
   const tsFromUrl    = sourceTimestamp ?? extractTimestampFromUrl(form.url);
   const tsFromInput  = parseManualTimestamp(tsInput);
+  const tsEndParsed  = parseManualTimestamp(tsEndInput);
   const finalTs      = tsFromInput ?? tsFromUrl;
 
   return (
@@ -289,7 +292,7 @@ export default function AddTrackPage() {
               )}
             </div>
 
-            <FormRow label="Timestamp">
+            <FormRow label="Début">
               <input
                 type="text"
                 inputMode="numeric"
@@ -302,6 +305,22 @@ export default function AddTrackPage() {
               {tsFromInput !== null && (
                 <p className="text-[11px] mt-1" style={{ color: "var(--amber)" }}>
                   ⏱ {formatTimestamp(tsFromInput)}
+                </p>
+              )}
+            </FormRow>
+            <FormRow label="Fin">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Optionnel — 15:20"
+                value={tsEndInput}
+                onChange={(e) => setTsEndInput(e.target.value)}
+                className="form-input"
+                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
+              />
+              {tsEndParsed !== null && (
+                <p className="text-[11px] mt-1" style={{ color: "var(--amber)", opacity: 0.7 }}>
+                  ⏱ {formatTimestamp(tsEndParsed)}
                 </p>
               )}
             </FormRow>

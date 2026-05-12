@@ -227,7 +227,7 @@ export default function EditTrackPage() {
               className="form-input"
             />
           </FormRow>
-          <FormRow label="Timestamp" last={!isIds}>
+          <FormRow label="Début">
             <input
               type="text"
               inputMode="numeric"
@@ -238,19 +238,17 @@ export default function EditTrackPage() {
               style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
             />
           </FormRow>
-          {isIds && (
-            <FormRow label="Fin" last>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Optionnel — 15:20"
-                value={tsEndInput}
-                onChange={(e) => setTsEndInput(e.target.value)}
-                className="form-input"
-                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
-              />
-            </FormRow>
-          )}
+          <FormRow label="Fin" last>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Optionnel — 15:20"
+              value={tsEndInput}
+              onChange={(e) => setTsEndInput(e.target.value)}
+              className="form-input"
+              style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
+            />
+          </FormRow>
         </FormSection>
 
         {/* ── Section: ID info (IDs only) ──────────────────────────── */}

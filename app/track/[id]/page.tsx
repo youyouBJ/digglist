@@ -545,7 +545,25 @@ function getYouTubeEmbedId(url: string): string | null {
 
 function getSoundCloudEmbedUrl(url: string): string | null {
   if (!/soundcloud\.com/.test(url)) return null;
-  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%233d9e87&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false`;
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";          // strip #t=... — widget rejects fragment
+    parsed.searchParams.delete("t"); // strip ?t= if somehow present
+    const cleanUrl = parsed.toString();
+    const p = new URLSearchParams({
+      url:           cleanUrl,
+      color:         "#3d9e87",
+      auto_play:     "false",
+      hide_related:  "true",
+      show_comments: "false",
+      show_user:     "true",
+      show_reposts:  "false",
+      show_teaser:   "false",
+    });
+    return `https://w.soundcloud.com/player/?${p.toString()}`;
+  } catch {
+    return null;
+  }
 }
 
 function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null }) {
@@ -571,15 +589,26 @@ function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null 
 
   if (scUrl) {
     return (
-      <div className="mx-5 sm:mx-8 mb-4 rounded-[10px] overflow-hidden"
-        style={{ border: "0.5px solid var(--rule2)" }}>
-        <iframe
-          src={scUrl}
-          title="SoundCloud player"
-          allow="autoplay"
-          className="w-full"
-          style={{ border: "none", height: 120 }}
-        />
+      <div className="mx-5 sm:mx-8 mb-4">
+        <div className="rounded-[10px] overflow-hidden"
+          style={{ border: "0.5px solid var(--rule2)" }}>
+          <iframe
+            src={scUrl}
+            title="SoundCloud player"
+            allow="autoplay"
+            className="w-full"
+            style={{ border: "none", height: 120 }}
+          />
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 block text-right text-[11px] transition-colors"
+          style={{ color: "var(--t4)" }}
+        >
+          Open on SoundCloud →
+        </a>
       </div>
     );
   }
