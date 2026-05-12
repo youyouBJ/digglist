@@ -218,7 +218,7 @@ export default function SetDetailPage() {
           style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
         >
           <PlusIcon />
-          Log moment
+          Log from set
         </button>
 
         {set.sourceUrl && (
@@ -289,13 +289,16 @@ export default function SetDetailPage() {
             <div className="mx-auto mt-3 mb-4 w-9 h-1 rounded-full shrink-0"
               style={{ background: "var(--rule3)" }} />
 
-            <div className="flex items-center justify-between px-5 mb-4 shrink-0">
-              <p className="text-[15px] font-medium" style={{ color: "var(--t1)" }}>Log moment</p>
+            <div className="flex items-center justify-between px-5 mb-1 shrink-0">
+              <p className="text-[15px] font-medium" style={{ color: "var(--t1)" }}>Log from this set</p>
               <button type="button" onClick={() => setShowSheet(false)}
                 className="text-[13px]" style={{ color: "var(--t3)" }}>
                 Cancel
               </button>
             </div>
+            <p className="px-5 mb-4 text-[11px]" style={{ color: "var(--t3)" }}>
+              A moment at a specific timestamp in this set.
+            </p>
 
             {/* Mode toggle */}
             <div className="flex px-5 mb-4 gap-2 shrink-0">
@@ -313,7 +316,7 @@ export default function SetDetailPage() {
                       : "var(--t3)",
                   }}
                 >
-                  {m === "track" ? "Track" : "ID needed"}
+                  {m === "track" ? "I know it" : "Unknown track"}
                 </button>
               ))}
             </div>
@@ -397,7 +400,7 @@ export default function SetDetailPage() {
                   color:      logMode === "id" ? "var(--amber)" : "var(--bg)",
                 }}
               >
-                {logSaving ? "Saving…" : logMode === "track" ? "Log track →" : "Log ID →"}
+                {logSaving ? "Saving…" : logMode === "track" ? "Save track →" : "Log as ID →"}
               </button>
             </div>
           </div>

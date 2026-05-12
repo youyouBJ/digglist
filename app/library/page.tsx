@@ -188,6 +188,30 @@ export default function LibraryPage() {
         <EmptyState />
       ) : (
         <>
+          {/* ── Crates quick access ─────────────────────────────────── */}
+          <Link
+            href="/crates"
+            className="flex items-center gap-3 px-5 sm:px-8 py-[12px] transition-opacity active:opacity-70"
+            style={{ borderBottom: "0.5px solid var(--rule)", borderTop: "0.5px solid var(--rule)" }}
+          >
+            <div className="w-7 h-7 flex items-center justify-center rounded-[6px] shrink-0"
+              style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}>
+              <StackIcon />
+            </div>
+            <span className="flex-1 text-[13px] font-medium" style={{ color: "var(--t2)" }}>
+              Crates
+            </span>
+            {crates.length > 0 && (
+              <span className="text-[11px]" style={{ color: "var(--t3)", fontFeatureSettings: '"tnum"' }}>
+                {crates.filter((c) => !c.parentId).length}
+              </span>
+            )}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--t4)", flexShrink: 0 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+            </svg>
+          </Link>
+
           {/* ── Search + Sort ───────────────────────────────────────── */}
           <div className="px-5 sm:px-8 mb-3 flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2.5 rounded-[10px] px-3 py-2.5"
@@ -511,6 +535,16 @@ function SearchIcon() {
       stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--t3)", flexShrink: 0 }}>
       <circle cx="11" cy="11" r="8" />
       <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
+    </svg>
+  );
+}
+
+function StackIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.4} style={{ color: "var(--t3)" }}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
     </svg>
   );
 }
