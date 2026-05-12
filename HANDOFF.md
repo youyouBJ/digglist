@@ -26,7 +26,7 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 
 ## Phase 1 — Stabilisation Beta (état)
 
-### Fait (2026-05-12)
+### Fait (2026-05-12) — Phase 1 complète ✅
 
 | Item | Fichier | État |
 |------|---------|------|
@@ -36,13 +36,8 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 | UX-ADD-01 — Champ `videoAuthor` dans Add Track | `add-track/page.tsx` | ✅ |
 | UX-NAV-01 — Supprimer "Log from a set" redondant | `BottomNav.tsx` | ✅ |
 | UX-05 — "Auteur vidéo" → "Video author" | `track/[id]/page.tsx`, `edit/page.tsx` | ✅ |
-
-### Restant Phase 1
-
-| Item | Fichier | Complexité |
-|------|---------|-----------|
-| BUG-03 — timestampEnd seul invisible | `track/[id]/page.tsx` l.266 | XS |
-| BUG-06 — Embed absent pour les IDs | `track/[id]/page.tsx` l.206 | XS |
+| BUG-03 — timestampEnd seul affiché en row "End" | `track/[id]/page.tsx` | ✅ |
+| BUG-06 — Embed activé pour les IDs (YouTube/SC) | `track/[id]/page.tsx` | ✅ |
 
 ---
 
@@ -79,8 +74,6 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 | ID | Sévérité | Description | Fichier | Complexité |
 |----|----------|-------------|---------|-----------|
 | BUG-02 | Moyenne | Back button Track Detail toujours vers /library même depuis /ids | `track/[id]/page.tsx` l.116 | S |
-| BUG-03 | Moyenne | timestampEnd affiché seulement si les deux timestamps sont définis | `track/[id]/page.tsx` l.266 | XS |
-| BUG-06 | Faible | Embed absent pour les IDs (condition `!isIds`) | `track/[id]/page.tsx` l.206 | XS |
 
 ---
 
@@ -101,23 +94,6 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 ---
 
 ## Prochaine tâche recommandée
-
-### Phase 1 restante (15 min)
-
-**BUG-03** — Afficher timestampEnd seul :
-```tsx
-// app/track/[id]/page.tsx ligne 266 — changer la condition :
-{track.timestampEnd !== null && track.sourceTimestamp !== null && (  // ancien
-{track.timestampEnd !== null && (                                    // nouveau
-```
-Si `sourceTimestamp` est null → afficher en row "End" au lieu de "Segment".
-
-**BUG-06** — Embed pour les IDs :
-```tsx
-// app/track/[id]/page.tsx ligne 206 — changer :
-{track.sourceUrl && !isIds && (    // ancien
-{track.sourceUrl && (             // nouveau
-```
 
 ### Phase 2 (prochain sprint)
 

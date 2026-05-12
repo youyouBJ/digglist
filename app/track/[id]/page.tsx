@@ -203,7 +203,7 @@ export default function TrackDetailPage() {
       )}
 
       {/* ── Embed ──────────────────────────────────────────────────── */}
-      {track.sourceUrl && !isIds && (
+      {track.sourceUrl && (
         <TrackEmbed url={track.sourceUrl} timestamp={track.sourceTimestamp} />
       )}
 
@@ -263,8 +263,8 @@ export default function TrackDetailPage() {
           </SectionRow>
         )}
 
-        {track.timestampEnd !== null && track.sourceTimestamp !== null && (
-          <SectionRow label="Segment">
+        {track.timestampEnd !== null && (
+          <SectionRow label={track.sourceTimestamp !== null ? "Segment" : "End"}>
             <span
               className="text-[13px] font-medium"
               style={{
@@ -273,7 +273,9 @@ export default function TrackDetailPage() {
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              {formatTimestamp(track.sourceTimestamp!)} → {formatTimestamp(track.timestampEnd!)}
+              {track.sourceTimestamp !== null
+                ? `${formatTimestamp(track.sourceTimestamp!)} → ${formatTimestamp(track.timestampEnd!)}`
+                : formatTimestamp(track.timestampEnd!)}
             </span>
           </SectionRow>
         )}

@@ -28,8 +28,8 @@ Objectif : corriger les bugs critiques du test iPhone, clarifier les flows, cons
 - [x] STATUS-01 — Status `track.status === "IDs Needed"` encore présent dans crates/[id]
 - [x] UX-ADD-01 — Add Track incomplet vs Edit (champ `videoAuthor` manquant)
 - [x] UX-NAV-01 — "Log from a set" redondant avec "Add a track" dans la sheet
-- [ ] BUG-03 — timestampEnd invisible s'il est seul (sans sourceTimestamp)
-- [ ] BUG-06 — Embed absent pour les IDs (condition `!isIds`)
+- [x] BUG-03 — timestampEnd invisible s'il est seul (sans sourceTimestamp)
+- [x] BUG-06 — Embed absent pour les IDs (condition `!isIds`)
 
 ---
 
