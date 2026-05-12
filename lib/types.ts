@@ -16,8 +16,22 @@ export type Track = {
   timestampEnd: number | null;
   videoAuthor: string;
   trackIdHint: string;
+  setId: string | null;
   createdAt: string;
 };
+
+export type MixSet = {
+  id: string;
+  userId: string;
+  title: string;
+  sourceUrl: string | null;
+  platform: string | null;
+  coverUrl: string | null;
+  notes: string;
+  createdAt: string;
+};
+
+export type MixSetWithCount = MixSet & { momentCount: number };
 
 export type TrackFormState = {
   title: string;

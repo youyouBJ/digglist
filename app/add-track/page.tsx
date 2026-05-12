@@ -120,6 +120,7 @@ export default function AddTrackPage() {
         timestampEnd:    tsEndParsed,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     "",
+        setId:           null,
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       setSaved(true);

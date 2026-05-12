@@ -96,6 +96,7 @@ export default function EditTrackPage() {
         timestampEnd:    parseManualTimestamp(tsEndInput) ?? track!.timestampEnd,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     trackIdHint.trim(),
+        setId:           track!.setId,
       });
       await syncTrackCrates(id, selectedCrateIds, initialCrateIds);
       router.push(`/track/${id}`);

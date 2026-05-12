@@ -29,12 +29,14 @@ function BookmarkIcon({ active }: { active: boolean }) {
   );
 }
 
-function StackIcon({ active }: { active: boolean }) {
+function SetsIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={active ? 1.8 : 1.4}>
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      <rect x="3"    y="14" width="2.5" height="6" rx="1.25" />
+      <rect x="8.5"  y="9"  width="2.5" height="11" rx="1.25" />
+      <rect x="14"   y="5"  width="2.5" height="15" rx="1.25" />
+      <rect x="19.5" y="11" width="2.5" height="8" rx="1.25" />
     </svg>
   );
 }
@@ -135,7 +137,7 @@ export default function BottomNav() {
 
   const onLibrary = path === "/library" || path.startsWith("/track/");
   const onIds     = path === "/ids";
-  const onCrates  = path === "/crates" || path.startsWith("/crates/");
+  const onSets    = path === "/sets"   || path.startsWith("/sets/");
 
   const navBg     = "rgba(20,20,22,0.97)";
   const activeTxt = "var(--t1)";
@@ -305,14 +307,14 @@ export default function BottomNav() {
             <span className="text-[10px] mt-[3px]" style={{ color: "var(--t1)" }}>Add</span>
           </div>
 
-          {/* Crates */}
+          {/* Sets */}
           <Link
-            href="/crates"
+            href="/sets"
             className="flex flex-col items-center gap-[3px] px-3 py-1"
-            style={{ color: onCrates ? activeTxt : dimTxt }}
+            style={{ color: onSets ? activeTxt : dimTxt }}
           >
-            <StackIcon active={onCrates} />
-            <span className="text-[10px]">Crates</span>
+            <SetsIcon active={onSets} />
+            <span className="text-[10px]">Sets</span>
           </Link>
 
           {/* Profile */}

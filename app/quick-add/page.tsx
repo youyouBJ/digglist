@@ -120,6 +120,7 @@ export default function QuickAddPage() {
         timestampEnd:    null,
         videoAuthor:     "",
         trackIdHint:     "",
+        setId:           null,
       });
       setSaved(true);
       setTimeout(() => {

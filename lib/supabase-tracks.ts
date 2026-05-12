@@ -21,6 +21,7 @@ export type TrackRow = {
   timestamp_end?: number | null;
   video_author: string;
   track_id_hint: string;
+  set_id?: string | null;
   created_at: string;
 };
 
@@ -43,6 +44,7 @@ export function toTrack(row: TrackRow): Track {
     timestampEnd:    row.timestamp_end ?? null,
     videoAuthor:     row.video_author ?? "",
     trackIdHint:     row.track_id_hint ?? "",
+    setId:           row.set_id ?? null,
     createdAt:       row.created_at,
   };
 }
@@ -65,6 +67,7 @@ function toRow(data: Omit<Track, "id" | "createdAt">) {
     timestamp_end:    data.timestampEnd ?? null,
     video_author:     data.videoAuthor,
     track_id_hint:    data.trackIdHint,
+    set_id:           data.setId ?? null,
   };
 }
 

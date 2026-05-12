@@ -130,6 +130,7 @@ export default function LogIdPage() {
         timestampEnd:    tsEnd,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     trackIdHint.trim(),
+        setId:           null,
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       router.push("/ids");
