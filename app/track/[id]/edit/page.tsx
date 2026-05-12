@@ -73,6 +73,7 @@ export default function EditTrackPage() {
         title:           form.title,
         artist:          form.artist,
         label:           form.label,
+        recordType:      track!.recordType,
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,
@@ -103,7 +104,7 @@ export default function EditTrackPage() {
   }
 
   const detectedTs = extractTimestampFromUrl(form.url) ?? storedTimestamp;
-  const isIds      = form.status === "IDs Needed";
+  const isIds      = track.recordType === "id_needed";
 
   return (
     <main

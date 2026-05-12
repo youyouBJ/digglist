@@ -60,9 +60,9 @@ export default function LibraryPage() {
 
   if (!user) return <PageLoader />;
 
-  /* IDs Needed live in /ids — exclude from Library */
-  const idsCount = allTracks.filter((t) => t.status === "IDs Needed").length;
-  const tracks   = allTracks.filter((t) => t.status !== "IDs Needed");
+  /* IDs live on /ids — exclude from Library */
+  const idsCount = allTracks.filter((t) => t.recordType === "id_needed").length;
+  const tracks   = allTracks.filter((t) => t.recordType !== "id_needed");
 
   const hasFilter = search !== "" || platformFilter !== "" || statusFilter !== "" || crateFilter !== "";
 

@@ -126,6 +126,7 @@ export default function QuickAddPage() {
         title:           title.trim() || (status === "IDs Needed" ? "Unknown track" : url.trim()),
         artist:          artist.trim(),
         label:           "",
+        recordType:      status === "IDs Needed" ? "id_needed" : "track",
         sourcePlatform:  platform,
         sourceUrl:       url.trim(),
         imageUrl,

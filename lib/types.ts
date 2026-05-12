@@ -3,6 +3,7 @@ export type Track = {
   title: string;
   artist: string;
   label: string;
+  recordType: string;   // 'track' | 'id_needed'
   sourcePlatform: string;
   sourceUrl: string;
   imageUrl: string;

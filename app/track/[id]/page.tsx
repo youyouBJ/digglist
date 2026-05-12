@@ -94,7 +94,7 @@ export default function TrackDetailPage() {
     );
   }
 
-  const isIds  = track.status === "IDs Needed";
+  const isIds  = track.recordType === "id_needed";
   const tsUrl  = buildTimestampUrl(track.sourceUrl, track.sourceTimestamp);
   const hasTs  = track.sourceTimestamp !== null && track.sourceTimestamp !== undefined;
 
@@ -504,7 +504,7 @@ function DetailThumb({ track }: { track: Track }) {
     );
   }
 
-  if (track.status === "IDs Needed") {
+  if (track.recordType === "id_needed") {
     return (
       <div
         className="shrink-0 flex items-center justify-center text-[22px] font-medium"

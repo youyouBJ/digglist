@@ -44,7 +44,7 @@ export default function IdsPage() {
     if (!user) return;
     Promise.all([getTracks(), getCrates()])
       .then(([t, c]) => {
-        setTracks(t.filter((tr) => tr.status === "IDs Needed"));
+        setTracks(t.filter((tr) => tr.recordType === "id_needed"));
         setCrates(c);
       })
       .catch((e: Error) => setError(e.message))

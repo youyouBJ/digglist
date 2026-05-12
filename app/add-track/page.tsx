@@ -110,6 +110,7 @@ export default function AddTrackPage() {
         title:           form.title,
         artist:          form.artist,
         label:           form.label,
+        recordType:      "track",
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,

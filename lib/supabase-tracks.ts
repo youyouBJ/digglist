@@ -8,6 +8,7 @@ export type TrackRow = {
   title: string;
   artist: string;
   label: string;
+  record_type: string;
   source_platform: string;
   source_url: string;
   image_url: string;
@@ -25,6 +26,7 @@ export function toTrack(row: TrackRow): Track {
     title:           row.title,
     artist:          row.artist,
     label:           row.label,
+    recordType:      row.record_type,
     sourcePlatform:  row.source_platform,
     sourceUrl:       row.source_url,
     imageUrl:        row.image_url,
@@ -42,6 +44,7 @@ function toRow(data: Omit<Track, "id" | "createdAt">) {
     title:            data.title,
     artist:           data.artist,
     label:            data.label,
+    record_type:      data.recordType,
     source_platform:  data.sourcePlatform,
     source_url:       data.sourceUrl,
     image_url:        data.imageUrl,
