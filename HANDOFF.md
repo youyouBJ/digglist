@@ -18,25 +18,24 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprint 0 ✅ Sprint 2A ✅ Sprint 2B complète ✅. Prochain : Sprint 3A (Rich Media) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B ✅ 3A ✅. Prochain : Sprint 3B (Spotify/Apple Music) ou FEAT-SC-TS.**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 3A ou FEAT-SC-TS
+## Prochaine tâche recommandée : Sprint 3B ou FEAT-SC-TS
 
-**Sprint 2B — Sets Integration, toutes tâches terminées ✅**
+**Sprint 3A — Rich Media terminé ✅**
 
 Ce qui est fait :
-- `/add-track` : sélecteur de set (pills teal), URL pré-remplie depuis set.sourceUrl, timestamp début requis si set choisi
-- `/ids/new` : même sélecteur (pills amber), URL pré-remplie + auto-fetch déclenché, timestamp requis
-- `/track/[id]` : section "From set" — cover mini, titre, plateforme, "Open set →", "Play from timestamp" (YT/SC timestampé)
-- Library rows : waveform 9px + nom du set en var(--t4) sous les notes
-- IDs rows : même indicateur en amber muted rgba(201,162,74,0.40)
-- `/sets/[id]` : "Log from set" → CTA primaire ; mode ID sheet → champ artiste optionnel ; MomentRow IDs → artiste affiché si connu
+- `fetch-metadata` : `fetchBandcamp` via oEmbed public (titre, artiste, thumbnail)
+- `PLATFORMS` : Bandcamp ajouté entre SoundCloud et Discogs
+- `TrackEmbed` : `PlatformLinkCard` pour Bandcamp (bc), TikTok (tt), Instagram (ig)
+- `SetEmbed` : même link card, fallback identique
+- YouTube et SoundCloud inchangés
 
 Choix suivants :
-- **Sprint 3A** : Bandcamp embed + TikTok/IG thumbnail (complexité XS–M)
-- **FEAT-SC-TS** : SoundCloud embed avec `seekTo` (timestamp natif, complexité L)
+- **Sprint 3B** : Spotify embed + Apple Music embed (complexité M–L, risque API)
+- **FEAT-SC-TS** : SoundCloud timestamp natif via SC Widget JS API (complexité L)
 
 ---
 

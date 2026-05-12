@@ -107,18 +107,16 @@ alter table public.tracks
 
 ---
 
-## Sprint 3A — Rich Media : Bandcamp + TikTok preview
+## Sprint 3A — Rich Media : Bandcamp + TikTok preview ✅
 > Objectif : gains faciles sur les embeds manquants.
 > Aucune migration SQL. Sessions : 1.
 
 ### Ordre d'exécution
 
-| Ordre | ID | Description | Fichier | Complexité | Dépendances |
-|-------|----|-------------|---------|-----------|-------------|
-| 1 | EMBED-BC-01 | Bandcamp embed + metadata auto (oEmbed public) | `api/fetch-metadata/`, `track/[id]/page.tsx` | S | aucune |
-| 2 | EMBED-TT-01 | TikTok/Instagram : afficher miniature ou placeholder coloré si thumbnail absent | `track/[id]/page.tsx`, `ids/page.tsx` | M | aucune |
-
-**Note Bandcamp** : oEmbed est public (`https://bandcamp.com/oembed?url=...`). L'embed est une iframe standard. Complexité réelle : XS–S.
+| Ordre | ID | Description | Fichier | Complexité | Dépendances | État |
+|-------|----|-------------|---------|-----------|-------------|------|
+| 1 | EMBED-BC-01 | Bandcamp metadata (oEmbed) + link card dans TrackEmbed/SetEmbed | `api/fetch-metadata/`, `track/[id]/page.tsx`, `sets/[id]/page.tsx` | S | aucune | ✅ |
+| 2 | EMBED-TT-01 | TikTok/Instagram : link card dans TrackEmbed/SetEmbed (thumbnail déjà géré via imageUrl) | `track/[id]/page.tsx`, `sets/[id]/page.tsx` | XS | EMBED-BC-01 | ✅ |
 
 ---
 
