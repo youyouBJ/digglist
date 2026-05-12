@@ -18,20 +18,18 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Phase 1 Stabilisation complète. Sprint 0 UX Quick Wins à lancer.**
+**Beta stable. Phase 1 complète. Sprint 0 UX Quick Wins en cours (4/7).**
 
 ---
 
 ## Prochaine tâche recommandée : Sprint 0 — UX Quick Wins
 
-**UX-01 + density + timestamps corrigés. Enchaîner sur les UX quick wins restants :**
+**Sprint 0 en cours. 4/7 tâches faites.**
 
 1. ~~BUG-02 — Back button conditionnel~~ ✅
 2. ~~UX-01 — Rating ★ + crate dots dans les rows~~ ✅
 3. ~~UX-DENSITY-01 — Notes line-clamp-1 + timestamp range~~ ✅
-4. **CRATES-COUNT-01** — Crate filter pills avec count `Techno (12)` — `library/page.tsx`, `ids/page.tsx` — complexité S
-3. **UX-DENSITY-01** — Notes line-clamp-1 en liste Library — `library/page.tsx` — complexité XS
-4. **CRATES-COUNT-01** — Crate filter pills avec count `Techno (12)` — `library/page.tsx`, `ids/page.tsx` — complexité S
+4. ~~CRATES-COUNT-01 — Crate filter pills avec count~~ ✅
 5. **SORT-01** — Tri Library et IDs (Date ↓, Rating ↓, A–Z) — `library/page.tsx`, `ids/page.tsx` — complexité S
 6. **UX-FOUND-01** — "Mark as found" sheet légère 3 champs — `track/[id]/page.tsx` — complexité M
 7. **CRATES-VIS-02** — Hiérarchie visuelle sous-crates — `crates/page.tsx` — complexité S

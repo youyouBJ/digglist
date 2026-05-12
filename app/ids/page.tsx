@@ -62,6 +62,14 @@ export default function IdsPage() {
 
   if (!user) return <PageLoader />;
 
+  /* Count IDs per crate */
+  const crateCountMap: Record<string, number> = {};
+  for (const t of tracks) {
+    for (const cid of (trackCrateMap[t.id] ?? [])) {
+      crateCountMap[cid] = (crateCountMap[cid] ?? 0) + 1;
+    }
+  }
+
   const filtered = tracks.filter((t) => {
     if (crateFilter && crateTrackIds && !crateTrackIds.has(t.id)) return false;
     if (search) {
@@ -161,23 +169,30 @@ export default function IdsPage() {
           {crates.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto px-5 sm:px-8 pb-3"
               style={{ scrollbarWidth: "none" }}>
-              {crates.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCrateFilter(crateFilter === c.id ? "" : c.id)}
-                  className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
-                  style={{
-                    background: crateFilter === c.id ? `${c.color}18` : "transparent",
-                    border:     crateFilter === c.id ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
-                    color:      crateFilter === c.id ? c.color : "var(--t2)",
-                  }}
-                >
-                  <span className="w-[5px] h-[5px] rounded-full shrink-0"
-                    style={{ background: c.color, opacity: crateFilter === c.id ? 1 : 0.5 }} />
-                  {c.name}
-                </button>
-              ))}
+              {crates.filter((c) => (crateCountMap[c.id] ?? 0) > 0).map((c) => {
+                const count  = crateCountMap[c.id] ?? 0;
+                const active = crateFilter === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCrateFilter(active ? "" : c.id)}
+                    className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
+                    style={{
+                      background: active ? `${c.color}18` : "transparent",
+                      border:     active ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
+                      color:      active ? c.color : "var(--t2)",
+                    }}
+                  >
+                    <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                      style={{ background: c.color, opacity: active ? 1 : 0.5 }} />
+                    {c.name}
+                    <span className="text-[10px]" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
               {crateFilter && (
                 <button
                   type="button"

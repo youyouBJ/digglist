@@ -64,6 +64,14 @@ export default function LibraryPage() {
   const idsCount = allTracks.filter((t) => t.recordType === "id_needed").length;
   const tracks   = allTracks.filter((t) => t.recordType !== "id_needed");
 
+  /* Count Library tracks per crate (excludes IDs) */
+  const crateCountMap: Record<string, number> = {};
+  for (const t of tracks) {
+    for (const cid of (trackCrateMap[t.id] ?? [])) {
+      crateCountMap[cid] = (crateCountMap[cid] ?? 0) + 1;
+    }
+  }
+
   const hasFilter = search !== "" || platformFilter !== "" || crateFilter !== "";
 
   const filtered = tracks.filter((t) => {
@@ -206,24 +214,31 @@ export default function LibraryPage() {
               {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
 
-            {/* Crate filter pills */}
-            {crates.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCrateFilter(crateFilter === c.id ? "" : c.id)}
-                className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
-                style={{
-                  background: crateFilter === c.id ? `${c.color}18` : "transparent",
-                  border:     crateFilter === c.id ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
-                  color:      crateFilter === c.id ? c.color : "var(--t2)",
-                }}
-              >
-                <span className="w-[5px] h-[5px] rounded-full shrink-0"
-                  style={{ background: c.color, opacity: crateFilter === c.id ? 1 : 0.5 }} />
-                {c.name}
-              </button>
-            ))}
+            {/* Crate filter pills — only show crates that have Library tracks */}
+            {crates.filter((c) => (crateCountMap[c.id] ?? 0) > 0).map((c) => {
+              const count   = crateCountMap[c.id] ?? 0;
+              const active  = crateFilter === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCrateFilter(active ? "" : c.id)}
+                  className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
+                  style={{
+                    background: active ? `${c.color}18` : "transparent",
+                    border:     active ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
+                    color:      active ? c.color : "var(--t2)",
+                  }}
+                >
+                  <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                    style={{ background: c.color, opacity: active ? 1 : 0.5 }} />
+                  {c.name}
+                  <span className="text-[10px]" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
 
             {hasFilter && (
               <button
