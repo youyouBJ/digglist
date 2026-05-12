@@ -62,7 +62,7 @@ export default function SetDetailPage() {
     try {
       const newTrack = await createTrack({
         title:           logMode === "track" ? logTitle.trim() : "Unknown track",
-        artist:          logMode === "track" ? logArtist.trim() : "",
+        artist:          logArtist.trim(),
         label:           "",
         recordType:      logMode === "track" ? "track" : "id_needed",
         rating:          null,
@@ -215,7 +215,7 @@ export default function SetDetailPage() {
           type="button"
           onClick={openSheet}
           className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium"
-          style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
+          style={{ background: "var(--t1)", color: "var(--bg)" }}
         >
           <PlusIcon />
           Log from set
@@ -227,7 +227,7 @@ export default function SetDetailPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium"
-            style={{ background: "var(--t1)", color: "var(--bg)" }}
+            style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
           >
             <ExternalIcon />
             Open set
@@ -371,22 +371,40 @@ export default function SetDetailPage() {
                   </div>
                 </>
               ) : (
-                <div>
-                  <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
-                    style={{ color: "var(--t4)" }}>
-                    Notes
-                    <span className="ml-1 normal-case tracking-normal"
-                      style={{ color: "var(--t4)", opacity: 0.6 }}>— optional</span>
-                  </p>
-                  <textarea
-                    value={logNotes}
-                    onChange={(e) => setLogNotes(e.target.value)}
-                    placeholder="Anything you remember about this track…"
-                    rows={3}
-                    className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none resize-none"
-                    style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t1)", caretColor: "var(--amber)" }}
-                  />
-                </div>
+                <>
+                  <div>
+                    <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
+                      style={{ color: "var(--t4)" }}>
+                      Artist
+                      <span className="ml-1 normal-case tracking-normal"
+                        style={{ color: "var(--t4)", opacity: 0.6 }}>— optional</span>
+                    </p>
+                    <input
+                      type="text"
+                      value={logArtist}
+                      onChange={(e) => setLogArtist(e.target.value)}
+                      placeholder="If you know who's playing…"
+                      className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none"
+                      style={{ background: "var(--bg3)", border: "0.5px solid var(--amber-rule)", color: "var(--t1)", caretColor: "var(--amber)" }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
+                      style={{ color: "var(--t4)" }}>
+                      Notes
+                      <span className="ml-1 normal-case tracking-normal"
+                        style={{ color: "var(--t4)", opacity: 0.6 }}>— optional</span>
+                    </p>
+                    <textarea
+                      value={logNotes}
+                      onChange={(e) => setLogNotes(e.target.value)}
+                      placeholder="Anything you remember about this track…"
+                      rows={2}
+                      className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none resize-none"
+                      style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t1)", caretColor: "var(--amber)" }}
+                    />
+                  </div>
+                </>
               )}
 
               <button
@@ -465,12 +483,19 @@ function MomentRow({ track, set }: { track: Track; set: MixSet }) {
       <div className="flex-1 min-w-0">
         {isId ? (
           <>
-            <span className="text-[11px] px-1.5 py-[2px] rounded"
-              style={{ background: "var(--amber-soft)", color: "var(--amber)", border: "0.5px solid var(--amber-rule)" }}>
-              ID
-            </span>
+            <div className="flex items-center gap-2 mb-[3px]">
+              <span className="text-[11px] px-1.5 py-[2px] rounded shrink-0"
+                style={{ background: "var(--amber-soft)", color: "var(--amber)", border: "0.5px solid var(--amber-rule)" }}>
+                ID
+              </span>
+              {track.artist && (
+                <p className="text-[12px] truncate" style={{ color: "rgba(201,162,74,0.75)" }}>
+                  {track.artist}
+                </p>
+              )}
+            </div>
             {track.notes && (
-              <p className="text-[12px] mt-[4px] line-clamp-1" style={{ color: "rgba(201,162,74,0.65)" }}>
+              <p className="text-[11px] line-clamp-1" style={{ color: "rgba(201,162,74,0.55)" }}>
                 {track.notes}
               </p>
             )}
