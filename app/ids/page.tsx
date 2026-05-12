@@ -33,6 +33,7 @@ export default function IdsPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
   const [search, setSearch]         = useState("");
+  const [sort, setSort]             = useState<"date" | "rating" | "az">("date");
   const [confirmId, setConfirmId]   = useState<string | null>(null);
 
   /* Crates */
@@ -81,6 +82,18 @@ export default function IdsPage() {
       );
     }
     return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "rating") {
+      const diff = (b.rating ?? 0) - (a.rating ?? 0);
+      return diff !== 0 ? diff : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    if (sort === "az") {
+      return (a.title || a.artist || "").toLowerCase()
+        .localeCompare((b.title || b.artist || "").toLowerCase());
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   async function handleDelete(id: string) {
@@ -143,9 +156,9 @@ export default function IdsPage() {
         <EmptyState />
       ) : (
         <>
-          {/* ── Search ──────────────────────────────────────────────── */}
-          <div className="px-5 sm:px-8 mb-3">
-            <div className="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5"
+          {/* ── Search + Sort ───────────────────────────────────────── */}
+          <div className="px-5 sm:px-8 mb-3 flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2.5 rounded-[10px] px-3 py-2.5"
               style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}>
               <SearchIcon />
               <input
@@ -163,6 +176,25 @@ export default function IdsPage() {
                 </button>
               )}
             </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as "date" | "rating" | "az")}
+              className="shrink-0 h-[40px] px-2.5 rounded-[10px] text-[12px] focus:outline-none"
+              style={{
+                background:         "var(--bg3)",
+                border:             "0.5px solid var(--rule2)",
+                color:              sort !== "date" ? "var(--amber)" : "rgba(201,162,74,0.45)",
+                appearance:         "none",
+                paddingRight:       "1.75rem",
+                backgroundImage:    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23C9A24A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                backgroundRepeat:   "no-repeat",
+                backgroundPosition: "right 8px center",
+              }}
+            >
+              <option value="date">Date ↓</option>
+              <option value="rating">Rating ↓</option>
+              <option value="az">A–Z</option>
+            </select>
           </div>
 
           {/* ── Crate filter pills ──────────────────────────────────── */}
@@ -207,13 +239,13 @@ export default function IdsPage() {
           )}
 
           {/* ── ID list ─────────────────────────────────────────────── */}
-          {filtered.length === 0 ? (
+          {sorted.length === 0 ? (
             <div className="flex-1 flex items-center justify-center py-20">
               <p className="text-sm" style={{ color: "var(--t3)" }}>No IDs match your search.</p>
             </div>
           ) : (
             <ul style={{ borderTop: "0.5px solid var(--rule)" }}>
-              {filtered.map((track) => (
+              {sorted.map((track) => (
                 <IdRow
                   key={track.id}
                   track={track}
