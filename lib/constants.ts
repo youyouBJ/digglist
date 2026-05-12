@@ -35,6 +35,17 @@ export function getStatusColor(status: string): string {
 
 import type { TrackFormState } from "./types";
 
+export const CRATE_COLORS = [
+  "#3d9e87", // teal
+  "#c9a24a", // amber
+  "#5272a0", // slate
+  "#8b6fd4", // purple
+  "#c96a4a", // terra
+  "#4a9ec9", // sky
+  "#6ac97d", // sage
+  "#c94a7d", // rose
+] as const;
+
 export const EMPTY_TRACK_FORM: TrackFormState = {
   title:    "",
   artist:   "",

@@ -3,7 +3,7 @@ import type { Track } from "./types";
 
 export type { Track } from "./types";
 
-type TrackRow = {
+export type TrackRow = {
   id: string;
   title: string;
   artist: string;
@@ -18,7 +18,7 @@ type TrackRow = {
   created_at: string;
 };
 
-function toTrack(row: TrackRow): Track {
+export function toTrack(row: TrackRow): Track {
   return {
     id:              row.id,
     title:           row.title,

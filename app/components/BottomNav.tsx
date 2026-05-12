@@ -134,7 +134,7 @@ export default function BottomNav() {
   }
 
   const onLibrary = path === "/library" || path.startsWith("/track/");
-  const onCrates  = path === "/crates";
+  const onCrates  = path === "/crates" || path.startsWith("/crates/");
 
   const navBg     = "rgba(20,20,22,0.97)";
   const activeTxt = "var(--t1)";

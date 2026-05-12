@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, updateTrack, type Track } from "@/lib/supabase-tracks";
+import {
+  getCrates, getTrackCrates, syncTrackCrates,
+  type Crate,
+} from "@/lib/supabase-crates";
 import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
 import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 import type { TrackFormState } from "@/lib/types";
@@ -23,10 +27,15 @@ export default function EditTrackPage() {
   const [saving, setSaving]                   = useState(false);
   const [error, setError]                     = useState<string | null>(null);
 
+  /* Crates */
+  const [allCrates, setAllCrates]             = useState<Crate[]>([]);
+  const [initialCrateIds, setInitialCrateIds] = useState<string[]>([]);
+  const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (!user) return;
-    getTrackById(id)
-      .then((t) => {
+    Promise.all([getTrackById(id), getTrackCrates(id), getCrates()])
+      .then(([t, tc, ac]) => {
         if (!t) { setTrack(null); return; }
         setTrack(t);
         setStoredTimestamp(t.sourceTimestamp);
@@ -41,6 +50,10 @@ export default function EditTrackPage() {
           status:   t.status,
           notes:    t.notes,
         });
+        const ids = tc.map((c) => c.id);
+        setInitialCrateIds(ids);
+        setSelectedCrateIds(ids);
+        setAllCrates(ac);
       })
       .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
@@ -67,6 +80,7 @@ export default function EditTrackPage() {
         notes:           form.notes,
         sourceTimestamp: finalTimestamp,
       });
+      await syncTrackCrates(id, selectedCrateIds, initialCrateIds);
       router.push(`/track/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes.");
@@ -273,6 +287,37 @@ export default function EditTrackPage() {
             />
           </div>
         </FormSection>
+
+        {/* ── Section: Crates ──────────────────────────────────────── */}
+        {allCrates.length > 0 && (
+          <FormSection label="Crates">
+            <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
+              {allCrates.map((c) => {
+                const selected = selectedCrateIds.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedCrateIds((prev) =>
+                        selected ? prev.filter((x) => x !== c.id) : [...prev, c.id]
+                      )
+                    }
+                    className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium transition-colors"
+                    style={selected
+                      ? { background: `${c.color}14`, color: c.color, border: `0.5px solid ${c.color}40` }
+                      : { background: "var(--bg3)", color: "var(--t4)", border: "0.5px solid var(--rule2)" }
+                    }
+                  >
+                    <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                      style={{ background: selected ? c.color : "var(--t4)" }} />
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          </FormSection>
+        )}
 
         {/* ── Action bar ───────────────────────────────────────────── */}
         <div

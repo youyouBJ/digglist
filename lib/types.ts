@@ -24,3 +24,16 @@ export type TrackFormState = {
   status: string;
   notes: string;
 };
+
+export type Crate = {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  color: string;
+  parentId: string | null;
+  position: number;
+  createdAt: string;
+};
+
+export type CrateWithCount = Crate & { trackCount: number };

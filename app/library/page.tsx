@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getCrates, getCrateTrackIds, type CrateWithCount } from "@/lib/supabase-crates";
 import { PLATFORMS, STATUSES } from "@/lib/constants";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
@@ -37,13 +38,31 @@ export default function LibraryPage() {
   const [statusFilter, setStatus]     = useState("");
   const [confirmId, setConfirmId]     = useState<string | null>(null);
 
+  /* Crates */
+  const [crates, setCrates]                     = useState<CrateWithCount[]>([]);
+  const [crateFilter, setCrateFilter]           = useState("");
+  const [crateTrackIds, setCrateTrackIds]       = useState<Set<string> | null>(null);
+  const [loadingCrateFilter, setLoadingCrateFilter] = useState(false);
+
   useEffect(() => {
     if (!user) return;
-    getTracks()
-      .then(setTracks)
+    Promise.all([
+      getTracks(),
+      getCrates(),
+    ])
+      .then(([t, c]) => { setTracks(t); setCrates(c); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!crateFilter) { setCrateTrackIds(null); return; }
+    setLoadingCrateFilter(true);
+    getCrateTrackIds(crateFilter)
+      .then((ids) => setCrateTrackIds(new Set(ids)))
+      .catch(() => setCrateTrackIds(null))
+      .finally(() => setLoadingCrateFilter(false));
+  }, [crateFilter]);
 
   /* Pre-set status filter from URL param (?ids=1) */
   useEffect(() => {
@@ -54,9 +73,10 @@ export default function LibraryPage() {
   if (!user) return <PageLoader />;
 
   const idsCount  = tracks.filter((t) => t.status === "IDs Needed").length;
-  const hasFilter = search !== "" || platformFilter !== "" || statusFilter !== "";
+  const hasFilter = search !== "" || platformFilter !== "" || statusFilter !== "" || crateFilter !== "";
 
   const filtered = tracks.filter((t) => {
+    if (crateFilter && crateTrackIds && !crateTrackIds.has(t.id)) return false;
     if (platformFilter && t.sourcePlatform !== platformFilter) return false;
     if (statusFilter   && t.status         !== statusFilter)   return false;
     if (search) {
@@ -122,13 +142,13 @@ export default function LibraryPage() {
 
             <div className="w-px h-6" style={{ background: "var(--rule2)" }} />
 
-            <div className="flex flex-col gap-0.5">
+            <Link href="/crates" className="flex flex-col gap-0.5">
               <span className="text-[18px] font-medium tracking-[-0.03em] leading-none"
-                style={{ color: "var(--t4)", fontFeatureSettings: '"tnum"' }}>
-                —
+                style={{ color: crates.length > 0 ? "var(--t1)" : "var(--t4)", fontFeatureSettings: '"tnum"' }}>
+                {crates.length > 0 ? crates.length : "—"}
               </span>
               <span className="text-[11px]" style={{ color: "var(--t3)" }}>crates</span>
-            </div>
+            </Link>
           </div>
         )}
       </div>
@@ -229,10 +249,29 @@ export default function LibraryPage() {
               {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
 
+            {/* Crate filter pills */}
+            {crates.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCrateFilter(crateFilter === c.id ? "" : c.id)}
+                className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
+                style={{
+                  background: crateFilter === c.id ? `${c.color}18` : "transparent",
+                  border:     crateFilter === c.id ? `0.5px solid ${c.color}40` : "0.5px solid var(--rule2)",
+                  color:      crateFilter === c.id ? c.color : "var(--t2)",
+                }}
+              >
+                <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                  style={{ background: c.color, opacity: crateFilter === c.id ? 1 : 0.5 }} />
+                {c.name}
+              </button>
+            ))}
+
             {hasFilter && (
               <button
                 type="button"
-                onClick={() => { setSearch(""); setPlatform(""); setStatus(""); }}
+                onClick={() => { setSearch(""); setPlatform(""); setStatus(""); setCrateFilter(""); }}
                 className="shrink-0 text-[11px] transition-colors underline underline-offset-2"
                 style={{ color: "var(--t3)" }}
               >

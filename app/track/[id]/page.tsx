@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import {
+  getTrackCrates, getCrates,
+  addTrackToCrate, removeTrackFromCrate,
+  type Crate,
+} from "@/lib/supabase-crates";
 import { formatTimestamp, buildTimestampUrl } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
@@ -19,12 +24,52 @@ export default function TrackDetailPage() {
   const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  /* Crates */
+  const [trackCrates, setTrackCrates]     = useState<Crate[]>([]);
+  const [allCrates, setAllCrates]         = useState<Crate[]>([]);
+  const [showCrateSheet, setShowCrateSheet] = useState(false);
+  const prevOverflow                      = useRef("");
+
   useEffect(() => {
     if (!user) return;
-    getTrackById(id)
-      .then(setTrack)
+    Promise.all([
+      getTrackById(id),
+      getTrackCrates(id),
+      getCrates(),
+    ])
+      .then(([t, tc, ac]) => {
+        setTrack(t);
+        setTrackCrates(tc);
+        setAllCrates(ac);
+      })
       .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
+
+  /* Scroll lock for crate sheet */
+  useEffect(() => {
+    if (showCrateSheet) {
+      prevOverflow.current = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = prevOverflow.current;
+    }
+    return () => { document.body.style.overflow = prevOverflow.current; };
+  }, [showCrateSheet]);
+
+  async function handleCrateToggle(crate: Crate) {
+    const inCrate = trackCrates.some((c) => c.id === crate.id);
+    setTrackCrates((prev) =>
+      inCrate ? prev.filter((c) => c.id !== crate.id) : [...prev, crate]
+    );
+    try {
+      if (inCrate) await removeTrackFromCrate(crate.id, id);
+      else         await addTrackToCrate(crate.id, id);
+    } catch {
+      setTrackCrates((prev) =>
+        inCrate ? [...prev, crate] : prev.filter((c) => c.id !== crate.id)
+      );
+    }
+  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -234,7 +279,139 @@ export default function TrackDetailPage() {
             </span>
           </SectionRow>
         )}
+
+        {/* Crates */}
+        <div
+          className="flex items-center justify-between gap-4 px-5 sm:px-8 py-[14px]"
+          style={{ borderBottom: "0.5px solid var(--rule)" }}
+        >
+          <span className="text-[10px] tracking-[0.12em] uppercase shrink-0"
+            style={{ color: "var(--t4)" }}>
+            Crates
+          </span>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {trackCrates.map((c) => (
+              <span
+                key={c.id}
+                className="flex items-center gap-1 text-[11px] px-2 py-[3px] rounded-full"
+                style={{
+                  background: `${c.color}14`,
+                  border:     `0.5px solid ${c.color}30`,
+                  color:      c.color,
+                }}
+              >
+                <span className="w-[5px] h-[5px] rounded-full inline-block shrink-0"
+                  style={{ background: c.color }} />
+                {c.name}
+              </span>
+            ))}
+            {allCrates.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowCrateSheet(true)}
+                className="text-[11px] transition-colors"
+                style={{ color: "var(--teal)" }}
+              >
+                {trackCrates.length === 0 ? "+ Add to crate" : "Manage"}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* ── Add-to-crate sheet ───────────────────────────────────────── */}
+      {showCrateSheet && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.60)", backdropFilter: "blur(3px)" }}
+            onClick={() => setShowCrateSheet(false)}
+          />
+          <div
+            className="absolute left-0 right-0 bottom-0 flex flex-col rounded-t-[22px] animate-sheet-up"
+            style={{
+              background:    "var(--bg2)",
+              borderTop:     "0.5px solid var(--rule2)",
+              boxShadow:     "0 -20px 50px -10px rgba(0,0,0,0.6)",
+              maxHeight:     "70vh",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            <div className="mx-auto mt-3 mb-4 w-9 h-1 rounded-full shrink-0"
+              style={{ background: "var(--rule3)" }} />
+            <div className="flex items-center justify-between px-5 mb-4 shrink-0">
+              <p className="text-[15px] font-medium" style={{ color: "var(--t1)" }}>Add to crate</p>
+              <button
+                type="button"
+                onClick={() => setShowCrateSheet(false)}
+                className="text-[13px] font-medium"
+                style={{ color: "var(--teal)" }}
+              >
+                Done
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5" style={{ scrollbarWidth: "none" }}>
+              {allCrates.map((crate) => {
+                const inCrate = trackCrates.some((c) => c.id === crate.id);
+                return (
+                  <button
+                    key={crate.id}
+                    type="button"
+                    onClick={() => handleCrateToggle(crate)}
+                    className="w-full flex items-center gap-3 py-3 text-left"
+                    style={{ borderBottom: "0.5px solid var(--rule)" }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
+                      style={{ background: `${crate.color}14`, border: `0.5px solid ${crate.color}30` }}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: crate.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium truncate" style={{ color: "var(--t1)" }}>
+                        {crate.name}
+                      </p>
+                      {crate.description && (
+                        <p className="text-[11px] truncate" style={{ color: "var(--t3)" }}>
+                          {crate.description}
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+                      style={inCrate
+                        ? { background: crate.color, border: `1.5px solid ${crate.color}` }
+                        : { border: "1.5px solid var(--rule2)" }
+                      }
+                    >
+                      {inCrate && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                          stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+              {allCrates.length === 0 && (
+                <div className="py-8 text-center">
+                  <p className="text-[13px]" style={{ color: "var(--t3)" }}>No crates yet.</p>
+                  <Link
+                    href="/crates/new"
+                    onClick={() => setShowCrateSheet(false)}
+                    className="text-[12px] mt-2 inline-block"
+                    style={{ color: "var(--teal)" }}
+                  >
+                    Create one →
+                  </Link>
+                </div>
+              )}
+              <div className="h-4" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Action bar ─────────────────────────────────────────────── */}
       <div

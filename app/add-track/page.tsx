@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createTrack } from "@/lib/supabase-tracks";
+import { getCrates, addTrackToCrate, type Crate } from "@/lib/supabase-crates";
 import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
@@ -27,6 +28,15 @@ export default function AddTrackPage() {
   const [fetchPhase, setFetchPhase]     = useState<"idle" | "success" | "error">("idle");
   const [fetchMsg, setFetchMsg]         = useState("");
   const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
+
+  /* Crates */
+  const [allCrates, setAllCrates]           = useState<Crate[]>([]);
+  const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getCrates().then(setAllCrates).catch(() => {});
+  }, [user]);
 
   // Pre-fill from quick-add via URL search params
   useEffect(() => {
@@ -95,7 +105,7 @@ export default function AddTrackPage() {
     setSaving(true);
     setError(null);
     try {
-      await createTrack({
+      const newTrack = await createTrack({
         title:           form.title,
         artist:          form.artist,
         sourcePlatform:  form.platform,
@@ -107,6 +117,9 @@ export default function AddTrackPage() {
         notes:           form.notes,
         sourceTimestamp: sourceTimestamp ?? extractTimestampFromUrl(form.url),
       });
+      await Promise.all(
+        selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id))
+      );
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save track.");
@@ -123,6 +136,7 @@ export default function AddTrackPage() {
     setFetchMsg("");
     setTimestamp(null);
     setError(null);
+    setSelectedCrateIds([]);
   }
 
   const isIds = form.status === "IDs Needed";
@@ -387,6 +401,37 @@ export default function AddTrackPage() {
               />
             </div>
           </FormSection>
+
+          {/* ── Section: Crates ──────────────────────────────────── */}
+          {allCrates.length > 0 && (
+            <FormSection label="Crates">
+              <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
+                {allCrates.map((c) => {
+                  const selected = selectedCrateIds.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedCrateIds((prev) =>
+                          selected ? prev.filter((x) => x !== c.id) : [...prev, c.id]
+                        )
+                      }
+                      className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium transition-colors"
+                      style={selected
+                        ? { background: `${c.color}14`, color: c.color, border: `0.5px solid ${c.color}40` }
+                        : { background: "var(--bg3)", color: "var(--t4)", border: "0.5px solid var(--rule2)" }
+                      }
+                    >
+                      <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                        style={{ background: selected ? c.color : "var(--t4)" }} />
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </FormSection>
+          )}
 
           {/* ── Action bar ───────────────────────────────────────── */}
           <div
