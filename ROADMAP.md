@@ -100,7 +100,7 @@ alter table public.tracks
 | 2 | FEAT-SET-LOGID | Sélecteur set dans Log ID — URL pré-remplie + auto-fetch, ts requis | `app/ids/new/page.tsx` | S | FEAT-SET-01 | ✅ |
 | 3 | FEAT-SET-DETAIL | Section "From set" sur détail track — cover, titre, Open set, Play from ts | `track/[id]/page.tsx` | S | FEAT-SET-01 | ✅ |
 | 4 | FEAT-SET-ROWS | Indicateur set discret dans Library rows et IDs rows | `library/page.tsx`, `ids/page.tsx` | XS | FEAT-SET-01 | ✅ |
-| 5 | FEAT-SET-MOMENTS | Review `/sets/[id]` moments — clarté Tracks vs IDs, qualité "Log from set" | `app/sets/[id]/page.tsx` | M | toutes ci-dessus | À faire |
+| 5 | FEAT-SET-MOMENTS | Review `/sets/[id]` moments — clarté Tracks vs IDs, qualité "Log from set" | `app/sets/[id]/page.tsx` | M | toutes ci-dessus | ✅ |
 | 6 | FEAT-SC-TS | SoundCloud embed avec timestamp (SC Widget JS API `seekTo`) | `track/[id]/page.tsx` | L | aucune | À faire |
 
 **Risque SC Widget JS API** : l'API `SC.Widget` communique via `postMessage` cross-origin. Timing subtil — le widget doit être ready avant `seekTo`. Risque de régression sur l'embed existant. **Traiter FEAT-SC-TS en dernier dans ce sprint.**

@@ -18,13 +18,13 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprint 0 ✅ Sprint 2A ✅ Sprint 2B tâches 1–4 ✅. Prochaine : tâche 5 (review /sets/[id]).**
+**Beta stable. Sprint 0 ✅ Sprint 2A ✅ Sprint 2B complète ✅. Prochain : Sprint 3A (Rich Media) ou FEAT-SC-TS.**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 2B tâche 5 — Review `/sets/[id]` moments
+## Prochaine tâche recommandée : Sprint 3A ou FEAT-SC-TS
 
-**Sprint 2B tâches 1–4 terminées ✅**
+**Sprint 2B — Sets Integration, toutes tâches terminées ✅**
 
 Ce qui est fait :
 - `/add-track` : sélecteur de set (pills teal), URL pré-remplie depuis set.sourceUrl, timestamp début requis si set choisi
@@ -32,9 +32,11 @@ Ce qui est fait :
 - `/track/[id]` : section "From set" — cover mini, titre, plateforme, "Open set →", "Play from timestamp" (YT/SC timestampé)
 - Library rows : waveform 9px + nom du set en var(--t4) sous les notes
 - IDs rows : même indicateur en amber muted rgba(201,162,74,0.40)
+- `/sets/[id]` : "Log from set" → CTA primaire ; mode ID sheet → champ artiste optionnel ; MomentRow IDs → artiste affiché si connu
 
-Prochaine étape :
-- **Tâche 5** : review `/sets/[id]/page.tsx` — clarifier l'affichage des moments (Tracks vs IDs), qualité du flow "Log from this set"
+Choix suivants :
+- **Sprint 3A** : Bandcamp embed + TikTok/IG thumbnail (complexité XS–M)
+- **FEAT-SC-TS** : SoundCloud embed avec `seekTo` (timestamp natif, complexité L)
 
 ---
 
