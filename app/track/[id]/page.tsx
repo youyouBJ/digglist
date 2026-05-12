@@ -72,10 +72,11 @@ export default function TrackDetailPage() {
   }
 
   async function handleDelete() {
+    const backDest = track?.recordType === "id_needed" ? "/ids" : "/library";
     setDeleting(true);
     try {
       await deleteTrack(id);
-      router.push("/library");
+      router.push(backDest);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete.");
       setDeleting(false);
@@ -113,12 +114,12 @@ export default function TrackDetailPage() {
       {/* ── Back bar ───────────────────────────────────────────────── */}
       <div className="flex items-center px-5 sm:px-8 pt-4 pb-3 sm:pt-6">
         <Link
-          href="/library"
+          href={isIds ? "/ids" : "/library"}
           className="flex items-center gap-2 text-[13px] transition-colors"
           style={{ color: "var(--teal)" }}
         >
           <ArrowLeft />
-          Library
+          {isIds ? "IDs" : "Library"}
         </Link>
       </div>
 

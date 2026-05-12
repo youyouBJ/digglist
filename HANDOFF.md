@@ -18,15 +18,27 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Phase 1 Stabilisation en cours.**
-
-Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Phase 1 a été démarrée le même jour.
+**Beta stable. Phase 1 Stabilisation complète. Sprint 0 UX Quick Wins à lancer.**
 
 ---
 
-## Phase 1 — Stabilisation Beta (état)
+## Prochaine tâche recommandée : Sprint 0 — UX Quick Wins
 
-### Fait (2026-05-12) — Phase 1 complète ✅
+**BUG-02 corrigé. Enchaîner sur les UX quick wins dans cet ordre :**
+
+1. ~~**BUG-02** — Back button conditionnel~~ ✅
+2. **UX-01** — Rating visible dans les rows Library et IDs — `library/page.tsx`, `ids/page.tsx` — complexité S
+3. **UX-DENSITY-01** — Notes line-clamp-1 en liste Library — `library/page.tsx` — complexité XS
+4. **CRATES-COUNT-01** — Crate filter pills avec count `Techno (12)` — `library/page.tsx`, `ids/page.tsx` — complexité S
+5. **SORT-01** — Tri Library et IDs (Date ↓, Rating ↓, A–Z) — `library/page.tsx`, `ids/page.tsx` — complexité S
+6. **UX-FOUND-01** — "Mark as found" sheet légère 3 champs — `track/[id]/page.tsx` — complexité M
+7. **CRATES-VIS-02** — Hiérarchie visuelle sous-crates — `crates/page.tsx` — complexité S
+
+Aucune migration SQL dans ce sprint. Aucune nouvelle route. ~1–2 sessions.
+
+---
+
+## Phase 1 — Stabilisation Beta ✅ Complète
 
 | Item | Fichier | État |
 |------|---------|------|
@@ -36,7 +48,7 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 | UX-ADD-01 — Champ `videoAuthor` dans Add Track | `add-track/page.tsx` | ✅ |
 | UX-NAV-01 — Supprimer "Log from a set" redondant | `BottomNav.tsx` | ✅ |
 | UX-05 — "Auteur vidéo" → "Video author" | `track/[id]/page.tsx`, `edit/page.tsx` | ✅ |
-| BUG-03 — timestampEnd seul affiché en row "End" | `track/[id]/page.tsx` | ✅ |
+| BUG-03 — timestampEnd seul affiché | `track/[id]/page.tsx` | ✅ |
 | BUG-06 — Embed activé pour les IDs (YouTube/SC) | `track/[id]/page.tsx` | ✅ |
 
 ---
@@ -53,27 +65,22 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 | Timestamps début + fin (saisie manuelle ou auto-URL) | ✅ |
 | Library — liste des tracks identifiés | ✅ |
 | IDs — page dédiée `/ids`, séparée de Library | ✅ |
-| Log an ID — form dédié `/ids/new` (BUG-01 corrigé) | ✅ |
+| Log an ID — form dédié `/ids/new` | ✅ |
 | Edit track — adaptatif (champs IDs si recordType=id_needed) | ✅ |
 | Crates — création, édition, sous-crates, 24 couleurs | ✅ |
 | Embed YouTube (avec timestamp natif) | ✅ |
 | Embed SoundCloud (widget, hash strippé, fallback link) | ✅ |
 | Metadata auto-fetch (YouTube, SC, TikTok, IG, Discogs) | ✅ |
-| Navigation mobile Library ↔ IDs ↔ Crates sans refresh | ✅ |
+| Navigation mobile Library ↔ IDs ↔ Crates | ✅ |
 | Search dans Library et IDs | ✅ |
 | Filtre par crate dans Library et IDs | ✅ |
-| BottomNav : Add sheet (2 options claires) + profil | ✅ |
-| SC embed normalisé (m.soundcloud.com, height sets) | ✅ |
-| crates/[id] : IDs détectés via `record_type` | ✅ |
-| Video author dans Add Track | ✅ |
+| BottomNav : Add sheet (2 options claires) | ✅ |
 
 ---
 
 ## Bugs connus restants
 
-| ID | Sévérité | Description | Fichier | Complexité |
-|----|----------|-------------|---------|-----------|
-| BUG-02 | Moyenne | Back button Track Detail toujours vers /library même depuis /ids | `track/[id]/page.tsx` l.116 | S |
+Aucun. BUG-02 corrigé (2026-05-12).
 
 ---
 
@@ -83,23 +90,12 @@ Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Ph
 - "Mark as found" flow dédié (actuellement ouvre le form edit complet)
 - Tri / sort dans Library et IDs
 - Crate pills sans count de tracks
-- Sets — onglet, page, flow dédié (Phase 2)
-- PWA manifest + Add to Home Screen (Phase 6)
-- Partage public (Phase 6)
-- Embed SoundCloud avec timestamp (Phase 2)
-- Player global persistant (Phase 6)
-- Support Spotify / Apple Music / Bandcamp (Phase 3)
-- IA metadata / résumé / BPM (Phase 4)
-
----
-
-## Prochaine tâche recommandée
-
-### Phase 2 (prochain sprint)
-
-1. Remplacer "You" par "Sets" dans BottomNav (nécessite page `/sets`)
-2. Déplacer profil/logout dans le Header
-3. Flow "Log from a set" dédié
+- Sets — onglet, page, flow dédié (Sprint 2A/2B)
+- PWA manifest + Add to Home Screen (Sprint 6)
+- Partage public (Sprint 6)
+- Embed SoundCloud avec timestamp (Sprint 2B)
+- Support Spotify / Apple Music / Bandcamp (Sprint 3)
+- IA metadata / résumé (Sprint 4)
 
 ---
 
@@ -111,9 +107,9 @@ lib/supabase-tracks.ts    → TrackRow, toTrack, toRow, CRUD functions
 lib/supabase-crates.ts    → Crate CRUD, syncTrackCrates
 lib/timestamp.ts          → extractTimestampFromUrl, parseManualTimestamp, formatTimestamp
 lib/constants.ts          → PLATFORMS, CRATE_COLORS (24 couleurs), STATUSES (dépréciées UI)
-app/api/fetch-metadata/   → Route API : oEmbed + scraping, toujours retourne 200
-app/components/BottomNav.tsx → Nav mobile + sheet Add (2 options) — profil déplacé en Phase 2
-app/track/[id]/page.tsx   → Détail track + embed SC normalisé (VOIR BUG-02/03/06)
+app/api/fetch-metadata/   → Route API : oEmbed + scraping, retourne toujours 200
+app/components/BottomNav.tsx → Nav mobile + sheet Add (2 options)
+app/track/[id]/page.tsx   → Détail track + embed SC normalisé
 app/library/page.tsx      → Library + TrackRow (rating manquant en liste)
 app/ids/page.tsx          → IDs + IdRow
 app/add-track/page.tsx    → Form complet avec videoAuthor
@@ -133,24 +129,24 @@ npm run build   # obligatoire — valide TypeScript strictement
 1. Exécuter le SQL dans Supabase Dashboard
 2. Mettre à jour `Track` dans `lib/types.ts`
 3. Mettre à jour `TrackRow`, `toTrack`, `toRow` dans `lib/supabase-tracks.ts`
-4. Mettre à jour tous les call sites de `createTrack` / `updateTrack` (TypeScript guide)
+4. Mettre à jour tous les call sites de `createTrack` / `updateTrack`
 
 ### Règle documentation continue
-**Après chaque tâche importante** : mettre à jour ROADMAP.md (cocher les items faits), HANDOFF.md (état actuel + prochaine priorité). Le README.md uniquement si les fonctionnalités ou la stack changent.
+Après chaque tâche importante : mettre à jour ROADMAP.md (cocher les items) et HANDOFF.md (état actuel + prochaine priorité).
 
 ### Pièges à éviter
-- **Ne jamais ré-ajouter des status pills** dans l'UI (To listen / To buy / To play / Inspiration)
-- **Ne jamais utiliser `?ids=1` comme URL param** — c'est l'ancienne approche bugguée
+- **Ne jamais ré-ajouter des status pills** dans l'UI
+- **Ne jamais utiliser `?ids=1` comme URL param**
 - **Ne jamais utiliser `track.status === "IDs Needed"`** — utiliser `track.recordType === "id_needed"`
 - **Ne jamais supprimer la colonne `status`** en DB sans migration des données
 - **Toujours strip le hash `#t=...`** avant d'encoder une URL SoundCloud pour le widget
-- **Toujours passer `user_id` dans les INSERTs** (tracks, crates) — la RLS rejette sinon
-- **Ne jamais réintroduire `useSearchParams`** dans `/ids/page.tsx` — source du bug nav mobile original
+- **Toujours passer `user_id` dans les INSERTs** (RLS rejette sinon)
+- **Ne jamais réintroduire `useSearchParams`** dans `/ids/page.tsx`
 
 ### Style de code
 - Pas de commentaires sauf si le WHY est non-évident
 - Pas de `console.log` laissés
-- CSS inline via `style={{}}` avec les CSS variables du design system (`var(--bg)`, `var(--t1)`, `var(--amber)`, etc.)
+- CSS inline via `style={{}}` avec les CSS variables (`var(--bg)`, `var(--t1)`, `var(--amber)`)
 - Tailwind pour layout/spacing, CSS variables pour les couleurs thématiques
 - Mobile-first : tester sur viewport 390px
 
@@ -162,6 +158,8 @@ npm run build   # obligatoire — valide TypeScript strictement
 # .env.local (jamais commité)
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+# Sprint 4 uniquement :
+# ANTHROPIC_API_KEY=<clé>
 ```
 
 ---
@@ -169,6 +167,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 ## Documentation complémentaire
 
 - `README.md` — vision, stack, routes, fonctionnalités
-- `ROADMAP.md` — backlog structuré par phases, bugs, décisions produit
+- `ROADMAP.md` — roadmap d'exécution complète, backlog par sprint, migrations SQL, risques
 - `TECHNICAL_NOTES.md` — schema DB, RLS, migrations, pièges techniques
 - `SUPABASE.md` — doc initiale (partiellement obsolète, se fier à TECHNICAL_NOTES.md)

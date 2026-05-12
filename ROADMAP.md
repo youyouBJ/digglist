@@ -1,409 +1,354 @@
 # Roadmap Digglist
 > Dernière mise à jour : 2026-05-12
-> État : Beta stable. Phase 1 Stabilisation en cours.
+> État : Phase 1 Stabilisation **complète**. Sprint UX à lancer.
 
 ---
 
-## Phases de développement
+## Roadmap d'exécution — Vue d'ensemble
+
+| Sprint | Nom | Sessions est. | État |
+|--------|-----|---------------|------|
+| 0 | UX Quick Wins | 1–2 | **À lancer** |
+| 2A | Sets — Infrastructure | 2–3 | À faire |
+| 2B | Sets — Flow + SC Timestamp | 2–3 | À faire |
+| 3A | Rich Media — Bandcamp + TikTok preview | 1 | À faire |
+| 3B | Rich Media — Spotify + Apple Music | 2–3 | À faire |
+| 4 | Smart Metadata / AI | 2 | À faire |
+| 5 | Crates Evolution | 1–2 | À faire |
+| 6 | Polish V1 | 2–3 | À faire |
+
+**Total estimé : 13–19 sessions Claude Code**
+
+---
+
+## Sprint 0 — UX Quick Wins
+> Objectif : liquider les frictions visibles et bug restant avant d'entrer en Phase 2.
+> Aucune migration SQL. Aucune nouvelle route. Sessions : 1–2.
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | BUG-02 | Back button Track Detail conditionnel (`/library` vs `/ids`) | `track/[id]/page.tsx` l.116 | S | aucune |
+| 2 | UX-01 | Rating visible dans les rows Library et IDs | `library/page.tsx`, `ids/page.tsx` | S | aucune |
+| 3 | UX-06 / UX-DENSITY-01 | Notes line-clamp-1 en liste Library | `library/page.tsx` | XS | aucune |
+| 4 | UX-03 / CRATES-COUNT-01 | Crate filter pills avec count `Techno (12)` | `library/page.tsx`, `ids/page.tsx` | S | aucune |
+| 5 | SORT-01 | Tri Library et IDs : Date ↓, Rating ↓, A–Z | `library/page.tsx`, `ids/page.tsx` | S | aucune |
+| 6 | UX-FOUND-01 | "Mark as found" — sheet légère 3 champs au lieu du form edit complet | `track/[id]/page.tsx` | M | aucune |
+| 7 | CRATES-VIS-02 | Hiérarchie visuelle sous-crates : indentation + trait vertical | `crates/page.tsx` | S | aucune |
+
+**À éviter dans ce sprint :**
+- UX-08 (Add Track form reorder) — risque de régression sur un form complexe
+- UX-09 (transitions) — prématuré, App Router + framer-motion = complexité non justifiée maintenant
+
+---
+
+## Sprint 2A — Sets System : Infrastructure
+> Objectif : créer la base du Sets System (DB + page + nav).
+> **1 migration SQL requise.**
+> Sessions : 2–3.
+
+### Migration SQL à préparer
+
+```sql
+-- Table sets
+create table public.sets (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references auth.users(id),
+  title           text not null default '',
+  source_url      text not null default '',
+  source_platform text not null default '',
+  image_url       text not null default '',
+  notes           text not null default '',
+  created_at      timestamptz not null default now()
+);
+
+-- RLS
+alter table public.sets enable row level security;
+create policy "Users manage own sets"
+  on public.sets for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Lien track → set (optionnel, utile pour "Log from a set")
+alter table public.tracks
+  add column set_id uuid references public.sets(id) on delete set null;
+```
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | DB-SET-01 | Migration SQL sets + set_id sur tracks | Supabase Dashboard | S | aucune |
+| 2 | LIB-SET-01 | `lib/types.ts` + `lib/supabase-sets.ts` (Set type, CRUD) | lib/ | S | DB-SET-01 |
+| 3 | FEAT-SET-01 | Page `/sets` — liste des sets sauvegardés | `app/sets/page.tsx` | M | LIB-SET-01 |
+| 4 | NAV-01 | Remplacer "You" par "Sets" dans BottomNav | `BottomNav.tsx` | S | FEAT-SET-01 |
+| 5 | NAV-02 | Déplacer logout/profil dans le Header | `Header.tsx` ou nouveau composant | S | NAV-01 |
+
+**Dépendance clé** : NAV-01 ne peut pas précéder FEAT-SET-01 — l'onglet doit pointer sur une page existante.
+
+---
+
+## Sprint 2B — Sets System : Flow + SC Timestamp
+> Objectif : compléter le flow "Log from a set" et le timestamp SoundCloud.
+> Sessions : 2–3.
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | FEAT-SET-02 | Flow "Log from a set" : URL set + timestamp → form pré-rempli | `app/sets/log/page.tsx` | M | FEAT-SET-01 |
+| 2 | FEAT-SC-TS | SoundCloud embed avec timestamp (SC Widget JS API `seekTo`) | `track/[id]/page.tsx` | L | aucune (indépendant) |
+| 3 | FEAT-AUTOPLAY | Auto-play au timestamp quand track vient d'un set | `track/[id]/page.tsx` | M | FEAT-SC-TS + set_id sur Track |
+
+**Risque SC Widget JS API** : l'API `SC.Widget` communique via `postMessage` cross-origin. Timing subtil — le widget doit être ready avant `seekTo`. Risque de régression sur l'embed existant. **Traiter FEAT-SC-TS en dernier dans ce sprint.**
+
+---
+
+## Sprint 3A — Rich Media : Bandcamp + TikTok preview
+> Objectif : gains faciles sur les embeds manquants.
+> Aucune migration SQL. Sessions : 1.
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | EMBED-BC-01 | Bandcamp embed + metadata auto (oEmbed public) | `api/fetch-metadata/`, `track/[id]/page.tsx` | S | aucune |
+| 2 | EMBED-TT-01 | TikTok/Instagram : afficher miniature ou placeholder coloré si thumbnail absent | `track/[id]/page.tsx`, `ids/page.tsx` | M | aucune |
+
+**Note Bandcamp** : oEmbed est public (`https://bandcamp.com/oembed?url=...`). L'embed est une iframe standard. Complexité réelle : XS–S.
+
+---
+
+## Sprint 3B — Rich Media : Spotify + Apple Music
+> Objectif : couvrir les plateformes streaming majeures.
+> Aucune migration SQL. Sessions : 2–3.
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | EMBED-SP-01 | Spotify embed (iframe `open.spotify.com/embed/track/…`) + oEmbed metadata | `api/fetch-metadata/`, `track/[id]/page.tsx` | M | aucune |
+| 2 | EMBED-AM-01 | Apple Music embed (iframe `embed.music.apple.com`) + metadata scraping | `api/fetch-metadata/`, `track/[id]/page.tsx` | M | aucune |
+
+**Risque Spotify** : oEmbed Spotify est public mais peut nécessiter une API key selon le endpoint utilisé. L'iframe embed fonctionne sans clé. À vérifier au moment de l'implémentation.
+
+**Risque Apple Music** : l'API MusicKit JS est complexe. Pour le beta, viser l'iframe embed simple uniquement + og: scraping pour les métadonnées.
+
+---
+
+## Sprint 4 — Smart Metadata / AI
+> Objectif : réduire la friction de saisie via IA.
+> Sessions : 2.
+
+### Infrastructure à décider avant
+
+Option A : **Route API interne** (`/api/ai-metadata`) qui appelle Claude API (Anthropic) — cohérent avec la stack.
+Option B : **Enrichissement côté client** — non recommandé (clé API exposée).
+
+**Recommandation** : Option A, route authentifiée comme `/api/fetch-metadata`.
+
+Variable d'env à ajouter : `ANTHROPIC_API_KEY` (ou `OPENAI_API_KEY` si OpenAI).
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | AI-INFRA-01 | Route `/api/ai-metadata` — reçoit titre/description, retourne artist/title/genre | `app/api/ai-metadata/route.ts` | M | API key configurée |
+| 2 | AI-META-01 | Intégrer AI-INFRA-01 dans Quick Add + Add Track : bouton "Suggest" ou auto-call | `quick-add/page.tsx`, `add-track/page.tsx` | M | AI-INFRA-01 |
+| 3 | AI-DESC-01 | Résumé IA des longues descriptions TikTok/Instagram dans les notes d'un ID | `api/ai-metadata/route.ts` + `ids/new/page.tsx` | S | AI-INFRA-01 |
+
+**BPM-01 — déféré** : complexité XL, aucune API publique fiable pour l'extraction BPM à un timestamp. Ne pas développer avant d'avoir un use case validé avec une API spécifique.
+
+---
+
+## Sprint 5 — Crates Evolution
+> Objectif : enrichir les crates visuellement et fonctionnellement.
+> **1 migration SQL optionnelle** (icônes).
+> Sessions : 1–2.
+
+### Migration SQL optionnelle
+
+```sql
+-- Icône/symbole sur les crates (emoji ou identifiant de symbole)
+alter table public.crates
+  add column icon text not null default '';
+-- Note : image_url est déjà en DB mais non utilisée en UI
+```
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | CRATES-SORT-01 | Réordonner les crates manuellement (flèches ou drag) | `crates/page.tsx` | S | `position` déjà en DB |
+| 2 | CRATES-VIS-01 | Motifs/icônes en plus des couleurs (emojis ou symboles) | `crates/new/page.tsx`, `crates/[id]/edit/page.tsx` | M | migration icon |
+
+**Note** : CRATES-COUNT-01 et CRATES-VIS-02 sont déjà dans Sprint 0 et faits en amont.
+
+---
+
+## Sprint 6 — Polish V1
+> Objectif : finitions avant ouverture/partage.
+> **1 migration SQL pour le partage public.**
+> Sessions : 2–3.
+
+### Migration SQL pour le partage
+
+```sql
+-- Token de partage public (UUID aléatoire par track/crate)
+alter table public.tracks
+  add column share_token uuid unique default gen_random_uuid();
+
+alter table public.crates
+  add column share_token uuid unique default gen_random_uuid();
+
+-- Policy SELECT publique (sans auth) sur share_token
+create policy "Public read by share_token — tracks"
+  on public.tracks for select
+  using (share_token is not null);
+
+create policy "Public read by share_token — crates"
+  on public.crates for select
+  using (share_token is not null);
+```
+
+### Ordre d'exécution
+
+| Ordre | ID | Description | Fichier | Complexité | Dépendances |
+|-------|----|-------------|---------|-----------|-------------|
+| 1 | PWA-01 | Manifest + Add to Home Screen + icônes 192/512px | `public/manifest.json`, `app/layout.tsx` | S | aucune |
+| 2 | UX-08 | Add Track form : revoir hiérarchie des champs | `add-track/page.tsx` | S | aucune |
+| 3 | SHARE-01 | Lien public `/share/track/[token]` + `/share/crate/[token]` | nouvelles routes + migration | M | migration share |
+| 4 | ANIM-01 | Transitions de page simples (CSS uniquement, pas framer-motion) | `app/layout.tsx` | M | aucune |
+
+---
+
+## Migrations SQL — Récapitulatif global
+
+| Sprint | Migration | Colonnes / Tables | Urgence |
+|--------|-----------|-------------------|---------|
+| 2A | `public.sets` + `tracks.set_id` | Nouvelle table + FK | Requis pour Phase 2 |
+| 5 | `crates.icon` | Colonne text | Optionnel (si motifs) |
+| 6 | `tracks.share_token` + `crates.share_token` + policies | 2 colonnes + 2 policies | Requis pour partage |
+
+**Ce qui n'a PAS besoin de migration :**
+- Bandcamp / Spotify / Apple Music embeds → uniquement code
+- AI metadata → uniquement code + env var
+- PWA → uniquement `public/` + layout
+- Rating visible, sort, notes density, mark as found → uniquement code
+
+---
+
+## Risques par sprint
+
+| Sprint | Risque | Mitigation |
+|--------|--------|-----------|
+| 2B | SC Widget JS API — timing `seekTo` cross-frame | Implémenter en dernier, avec fallback gracieux sur l'embed statique |
+| 2B | Sets DB design — set_id nullable sur tracks, évolution possible | Garder set_id nullable, pas de contrainte trop stricte |
+| 3B | Spotify oEmbed potentiellement authentifié | Tester l'endpoint public avant de s'engager |
+| 3B | Apple Music embed — MusicKit JS complexe | Viser iframe simple uniquement, pas MusicKit |
+| 4 | Latence IA dans Quick Add (dégrade la fluidité) | Appel IA optionnel (bouton "Suggest"), jamais bloquant |
+| 4 | BPM — aucune API publique fiable | Ne pas développer, rester en "Later" |
+| 6 | RLS policies publiques — risque d'exposition données | Tester en staging, vérifier que la policy est sur share_token non null |
+
+---
+
+## Tâches à ne pas toucher maintenant
+
+| Tâche | Raison |
+|-------|--------|
+| BPM-01 | Complexité XL, aucune API fiable |
+| Player global persistant | Complexité XL, architecture App Router — "Later" |
+| IA / Spotify / Apple Music / Bandcamp | Avant Phase 3/4 respectivement |
+| Sets System | Avant Sprint 0 terminé |
+| Transitions/animations framer-motion | Overhead de dépendance non justifié |
+| Export CSV/JSON | Hors scope beta |
+| Multi-user / collaboration | Hors scope |
+| Status pills (To listen / To buy / To play) | Décision produit finale — JAMAIS |
+| `?ids=1` URL param | Source du bug nav mobile — JAMAIS |
+| Supprimer colonne `status` en DB | Sans migration préalable des données |
+
+---
+
+## Phases de développement — Vue détaillée
 
 | Phase | Nom | État |
 |-------|-----|------|
-| 1 | Stabilisation Beta | En cours |
-| 2 | Sets System | À faire |
-| 3 | Rich Media / Embeds | À faire |
+| 1 | Stabilisation Beta | ✅ Complète |
+| Sprint 0 | UX Quick Wins | **À lancer** |
+| 2A | Sets System — Infrastructure | À faire |
+| 2B | Sets System — Flow + SC Timestamp | À faire |
+| 3A | Rich Media — Bandcamp + TikTok | À faire |
+| 3B | Rich Media — Spotify + Apple Music | À faire |
 | 4 | Smart Metadata / AI | À faire |
 | 5 | Crates Evolution | À faire |
 | 6 | Polish V1 | À faire |
 
 ---
 
-## Phase 1 — Stabilisation Beta
+## Phase 1 — Stabilisation Beta ✅
 
-Objectif : corriger les bugs critiques du test iPhone, clarifier les flows, consolider l'existant.
+Tous les items sont complétés.
 
-### Checklist
-
-- [x] BUG-01 — Log an ID dans Add sheet crée un track normal → fix `/ids/new`
-- [x] BUG-SC-01 — SoundCloud embed cassé sur certains sets (`m.soundcloud.com`, height)
-- [x] STATUS-01 — Status `track.status === "IDs Needed"` encore présent dans crates/[id]
-- [x] UX-ADD-01 — Add Track incomplet vs Edit (champ `videoAuthor` manquant)
-- [x] UX-NAV-01 — "Log from a set" redondant avec "Add a track" dans la sheet
-- [x] BUG-03 — timestampEnd invisible s'il est seul (sans sourceTimestamp)
-- [x] BUG-06 — Embed absent pour les IDs (condition `!isIds`)
-
----
-
-## Phase 2 — Sets System
-
-Objectif : navigation Sets, onglet dédié, flow "Log from a set".
-
-### Items
-
-- [ ] NAV-01 — Remplacer "You" par "Sets" dans la BottomNav
-- [ ] NAV-02 — Déplacer logout/profil en haut à droite (header) ou menu discret
-- [ ] FEAT-SET-01 — Page `/sets` — liste des sets sauvegardés (SoundCloud/YouTube/Mix)
-- [ ] FEAT-SET-02 — Flow "Log from a set" dédié — URL set + timestamp → track ou ID
-- [ ] FEAT-SC-TS — SoundCloud embed avec timestamp (SC Widget JS API `seekTo`)
-- [ ] FEAT-AUTOPLAY — Quand un track/moment vient d'un set, player lance automatiquement au timestamp
+| Item | État |
+|------|------|
+| BUG-01 — Log an ID → `/ids/new` | ✅ |
+| BUG-SC-01 — SC embed `m.soundcloud.com` + height sets | ✅ |
+| BUG-STATUS-01 — `track.status` → `track.recordType` | ✅ |
+| UX-ADD-01 — Champ `videoAuthor` dans Add Track | ✅ |
+| UX-NAV-01 — Supprimer "Log from a set" redondant | ✅ |
+| UX-05 — "Auteur vidéo" → "Video author" | ✅ |
+| BUG-03 — timestampEnd seul affiché | ✅ |
+| BUG-06 — Embed activé pour les IDs | ✅ |
 
 ---
 
-## Phase 3 — Rich Media / Embeds
+## Bugs connus restants
 
-Objectif : améliorer les previews TikTok/Instagram, préparer multi-plateformes.
-
-### Items
-
-- [ ] EMBED-TT-01 — TikTok/Instagram : afficher miniature ou preview si disponible
-- [ ] EMBED-SP-01 — Support Spotify (embed + metadata auto)
-- [ ] EMBED-AM-01 — Support Apple Music (embed + metadata auto)
-- [ ] EMBED-BC-01 — Support Bandcamp (embed + metadata auto)
+Aucun. BUG-02 corrigé (2026-05-12).
 
 ---
 
-## Phase 4 — Smart Metadata / AI
+## Audit initial — Dettes connues (état après Phase 1)
 
-Objectif : réduire la friction de saisie via IA et extraction automatique.
-
-### Items
-
-- [ ] AI-META-01 — API IA : extraire titre, artiste, genre depuis titre/description/caption
-- [ ] AI-DESC-01 — API IA : résumer descriptions TikTok/Instagram dans IDs
-- [ ] BPM-01 — Détection BPM automatique depuis YouTube/SoundCloud/Spotify (timestamp précis si possible)
-
----
-
-## Phase 5 — Crates Evolution
-
-Objectif : enrichir les crates visuellement et fonctionnellement.
-
-### Items
-
-- [ ] CRATES-VIS-01 — Motifs/icônes en plus des couleurs (patterns, emojis, symboles)
-- [ ] CRATES-VIS-02 — Hiérarchie visuelle sous-crates : indentation + trait vertical
-- [ ] CRATES-COUNT-01 — Crate filter pills avec count de tracks `Techno (12)`
-- [ ] CRATES-SORT-01 — Réordonner les crates manuellement (drag ou flèches)
+- Rating persisté mais invisible dans les rows Library/IDs — Sprint 0
+- `timestampEnd` affiché seulement en segment — ✅ corrigé Phase 1
+- `status` colonne en DB, invisible en UI — dépréciée, conservée
+- `image_url` sur crates : champ DB, UI non implémentée — Sprint 5
+- `STATUS_COLORS` + `getStatusColor` dans constants.ts : dead code (garder pour compatibilité)
+- "Mark as found" ouvre le form edit complet — Sprint 0
 
 ---
 
-## Phase 6 — Polish V1
+## Décisions produit arrêtées
 
-Objectif : finitions avant ouverture/partage.
+### Status → Crates (final)
+Les statuts `To listen / To buy / To play / Inspiration` sont définitivement invisibles dans l'UI. Ne jamais ré-exposer.
 
-### Items
+### record_type = source de vérité Library/IDs
+Ne jamais revenir au filtrage `?ids=1` ni au check `track.status === "IDs Needed"`.
 
-- [ ] PWA-01 — Manifest + Add to Home Screen + icônes 192/512px
-- [ ] SHARE-01 — Lien public read-only `/share/track/[id]` + `/share/crate/[id]`
-- [ ] SORT-01 — Tri Library et IDs : Date ↓, Rating ↓, A–Z
-- [ ] UX-FOUND-01 — Flow "Mark as found" allégé (sheet 3 champs max, pas le form complet)
-- [ ] UX-DENSITY-01 — Notes line-clamp-1 en liste Library
-- [ ] ANIM-01 — Transitions de page simples (si réalisable avec App Router)
+### quick-add = tracks identifiés uniquement
+`/quick-add` est exclusivement pour les tracks identifiés. Les IDs passent par `/ids/new`.
 
----
+### Embed SoundCloud
+Widget officiel, hash strippé, `m.soundcloud.com` normalisé, height 120 tracks / 300 sets. Timestamp via JS API en Phase 2.
 
----
-
-## P0 — Bugs critiques (post-test iPhone)
-
-Ces items cassent silencieusement un flow ou affichent une erreur visible.
+### BottomNav (Phase 1)
+"Add a track" + "Log an ID" dans la sheet. "Log from a set" supprimé jusqu'à Phase 2.
 
 ---
 
-### BUG-SC-01 — SoundCloud embed cassé sur certains sets
-**Priorité** : P0 / Critique
-**Fichier** : `app/track/[id]/page.tsx` — `getSoundCloudEmbedUrl`
-**Description** : Le player in-app affiche "You have not provided a valid SoundCloud URL" sur certains sets. Le lien source fonctionne mais le widget rejette l'URL.
-**Causes probables** : URL mobile `m.soundcloud.com` non reconnue par le widget ; trailing `?` après stripping des params.
-**Fix** : Normaliser `m.soundcloud.com` → `soundcloud.com`, nettoyer le `?` résiduel.
-**Impact** : Élevé — les sets SoundCloud sont un usage fréquent.
-**Complexité** : XS
-**Dépendances** : aucune
-**Phase** : 1
-
----
-
-### BUG-ADD-01 — Add Track incomplet : champ `videoAuthor` manquant
-**Priorité** : P0 / Critique
-**Fichier** : `app/add-track/page.tsx`
-**Description** : Le form Add Track n'a pas le champ "Video author" présent dans Edit. Pour les tracks YouTube/TikTok/Instagram, l'auteur vidéo ne peut pas être saisi à la création.
-**Fix** : Ajouter le champ `videoAuthor` dans la section Source.
-**Impact** : Moyen — données incomplètes à la création.
-**Complexité** : XS
-**Phase** : 1
-
----
-
-### BUG-NAV-01 — "Log from a set" redondant et trompeur
-**Priorité** : P0 / UX
-**Fichier** : `app/components/BottomNav.tsx`
-**Description** : La sheet Add a 3 options mais "Log from a set" pointe vers `/quick-add` — identique à "Add a track". L'utilisateur ne sait pas quelle option utiliser.
-**Fix** : Supprimer "Log from a set" de la sheet. Garder 2 options claires : "Add a track" et "Log an ID". Le flow set dédié est Phase 2.
-**Impact** : UX — confusion sur les flows disponibles.
-**Complexité** : XS
-**Phase** : 1
-
----
-
-### BUG-STATUS-01 — crates/[id] : `track.status === "IDs Needed"` au lieu de `record_type`
-**Priorité** : P0 / Critique (silencieux)
-**Fichier** : `app/crates/[id]/page.tsx` lignes 350, 438
-**Description** : Le composant `CrateTrackRow` détecte les IDs via `track.status` (legacy) au lieu de `track.recordType`. Les tracks dont le `status` n'est pas "IDs Needed" mais dont le `record_type` est `id_needed` s'affichent incorrectement.
-**Fix** : Remplacer `track.status === "IDs Needed"` par `track.recordType === "id_needed"`.
-**Impact** : Stylistique/data — les IDs peuvent s'afficher sans la mise en forme amber.
-**Complexité** : XS
-**Phase** : 1
-
----
-
-(voir aussi BUG-01 à BUG-06 dans l'audit ci-dessous)
-
----
-
-## P1 — UX importante (post-test iPhone)
-
-Frictions majeures identifiées sur iPhone en usage réel.
-
----
-
-### UX-SETS-01 — Remplacer "You" par "Sets" dans la BottomNav
-**Description** : L'onglet "You" (profil sheet) est peu utilisé. Le remplacer par un onglet "Sets" pour accéder aux sets sauvegardés.
-**Dépendance** : FEAT-SET-01 (page Sets) doit exister d'abord.
-**Impact** : Élevé — navigation principale.
-**Complexité** : S
-**Phase** : 2
-
----
-
-### UX-PROFILE-01 — Déplacer logout/profil en haut à droite
-**Description** : Avec la suppression de "You" du nav, le logout doit être accessible depuis le Header (icône user en haut à droite) ou un menu discret.
-**Impact** : Moyen — UX cohérente.
-**Complexité** : S
-**Phase** : 2
-
----
-
-### UX-PLAYER-01 — Auto-play set au timestamp depuis un track/moment
-**Description** : Quand un track vient d'un set avec timestamp défini, le player doit lancer automatiquement le set au bon timestamp.
-**Dépendance** : FEAT-SC-TS (SC Widget JS API) pour SoundCloud.
-**Impact** : Élevé — usage principal.
-**Complexité** : M
-**Phase** : 2
-
----
-
-### UX-TT-01 — TikTok/Instagram : miniature ou preview
-**Description** : Les IDs sauvegardés depuis TikTok/Instagram n'ont souvent pas de thumbnail. Afficher au minimum une preview ou une image de remplacement améliorée.
-**Impact** : Moyen — scanabilité des IDs.
-**Complexité** : M (dépend des APIs)
-**Phase** : 3
-
----
-
-(voir aussi UX-01 à UX-09 dans l'audit ci-dessous)
-
----
-
-## P2 — Features enrichissement (post-test iPhone)
-
----
-
-### FEAT-SP-01 — Support Spotify
-**Description** : Embed Spotify + extraction metadata via oEmbed ou API. Priorité : embed et titre/artiste auto.
-**Complexité** : M
-**Dépendances** : API Spotify (oEmbed public disponible)
-**Phase** : 3
-
----
-
-### FEAT-AM-01 — Support Apple Music
-**Description** : Embed Apple Music + extraction metadata.
-**Complexité** : M
-**Phase** : 3
-
----
-
-### FEAT-BC-01 — Support Bandcamp
-**Description** : Embed Bandcamp + extraction metadata. Bandcamp oEmbed est public.
-**Complexité** : S
-**Phase** : 3
-
----
-
-### AI-META-01 — Extraction IA : titre, artiste, genre
-**Description** : API IA (Claude ou autre) pour extraire titre, artiste, genre depuis le titre/description/caption d'une vidéo. Utile pour TikTok/Instagram.
-**Complexité** : M
-**Dépendances** : API Claude / OpenAI
-**Phase** : 4
-
----
-
-### AI-DESC-01 — Résumé IA des descriptions TikTok/Instagram
-**Description** : Résumer automatiquement les longues descriptions dans les notes d'un ID.
-**Complexité** : S (une fois l'infra IA en place)
-**Phase** : 4
-
----
-
-### BPM-01 — Détection BPM automatique
-**Description** : Détection BPM depuis la source (YouTube/SoundCloud/Spotify) si possible, notamment à un timestamp précis.
-**Complexité** : XL — très dépendant des APIs disponibles, souvent pas accessible publiquement.
-**Phase** : 4
-
----
-
----
-
-## Audit — état initial (2026-05-12)
-
-### Ce qui fonctionne bien
-- Auth email/password Supabase + RLS par user_id — solide
-- Quick Add URL → auto-fetch → save en 2 taps — flow propre
-- Library et IDs séparés par `record_type` — architecture correcte
-- BottomNav avec sheets Add + Profile — UX mobile cohérente
-- Crates CRUD : couleurs, sous-crates, filtre dans Library/IDs — fonctionnel
-- Embed YouTube avec timestamp natif — fiable
-- Embed SoundCloud avec hash stripping — fonctionnel (sauf sets mobiles)
-- Design system CSS variables — cohérent et maintenable
-- Extraction timestamp depuis URLs YouTube/SoundCloud — fiable
-
-### Ce qui est fragile
-- Embed SoundCloud : tracks vs sets non différenciés (height fixe 120px)
-- Metadata TikTok/Instagram : scraping best-effort, thumbnails souvent absents
-- "Log from a set" dans Add sheet : stub qui pointe vers quick-add (non distinct)
-- Back button Track Detail : hard-codé vers /library même si on vient de /ids
-
-### Dettes connues
-- Rating persisté mais invisible dans les rows Library/IDs
-- `timestampEnd` affiché seulement en segment (les deux timestamps requis)
-- `status` colonne en DB, invisible en UI — dépréciée, pas migrée
-- `image_url` sur crates : champ DB, UI non implémentée
-- `STATUS_COLORS` + `getStatusColor` dans constants.ts : dead code
-- Label "Auteur vidéo" en français dans UI anglaise (track detail + edit)
-- "Mark as found" ouvre le form edit complet au lieu d'un micro-flow
-
----
-
-## P0 — Bloquant Beta (audit initial)
-
-### BUG-01 — Add sheet : "Log an ID" crée un track normal
-**Fichier** : `app/components/BottomNav.tsx` ligne 193
-**Fix** : Changer href vers `/ids/new` ✅ (Phase 1)
-**Complexité** : XS
-
----
-
-### BUG-02 — Back button Track Detail toujours vers /library
-**Fichier** : `app/track/[id]/page.tsx` lignes 116–123
-**Fix** : Passer `?from=ids` depuis /ids, conditionner le back link.
-**Complexité** : S
-
----
-
-### BUG-03 — timestampEnd invisible s'il est seul
-**Fichier** : `app/track/[id]/page.tsx` ligne 266
-**Fix** : Afficher `timestampEnd` seul si `sourceTimestamp` est null.
-**Complexité** : XS
-
----
-
-### BUG-04 — SoundCloud sets : embed height trop petit
-**Fichier** : `app/track/[id]/page.tsx` ligne 596
-**Fix** : Détecter `/sets/` et passer height 300. ✅ (Phase 1 — couplé à BUG-SC-01)
-**Complexité** : XS
-
----
-
-### BUG-05 — "Log from a set" dans Add sheet : stub non fonctionnel
-**Fichier** : `app/components/BottomNav.tsx` ligne 215
-**Fix** : Supprimer l'item. ✅ (Phase 1)
-**Complexité** : XS
-
----
-
-### BUG-06 — Embed absent pour les IDs
-**Fichier** : `app/track/[id]/page.tsx` ligne 206
-**Fix** : Supprimer la condition `!isIds` sur `<TrackEmbed />`.
-**Complexité** : XS
-
----
-
-## P1 — UX critique (audit initial)
-
-### UX-01 — Rating invisible dans les rows Library et IDs
-**Fichier** : `app/library/page.tsx` (TrackRow), `app/ids/page.tsx` (IdRow)
-**Complexité** : S
-
----
-
-### UX-02 — Mark as found — flow trop lourd
-**Fichier** : `app/track/[id]/page.tsx`
-**Fix** : Sheet modale avec 3 champs max.
-**Complexité** : M
-
----
-
-### UX-03 — Crate filter pills sans count de tracks
-**Fichier** : `app/library/page.tsx`, `app/ids/page.tsx`
-**Complexité** : S
-
----
-
-### UX-04 — Tri / sort dans Library et IDs
-**Complexité** : S
-
----
-
-### UX-05 — Label "Auteur vidéo" en français ✅ (Phase 1)
-**Fichier** : `app/track/[id]/page.tsx` ligne 251, `app/track/[id]/edit/page.tsx`
-**Complexité** : XS
-
----
-
-### UX-06 — Densité Library : notes trop verbeux en liste
-**Complexité** : XS
-
----
-
-### UX-07 — Crates : hiérarchie visuelle sous-crates peu lisible
-**Complexité** : S
-
----
-
-### UX-08 — Add Track form : hiérarchie des champs confuse
-**Complexité** : S
-
----
-
-### UX-09 — Transitions et animations manquantes
-**Complexité** : M-L
-
----
-
-## P2 — Features importantes (audit initial)
-
-### FEAT-01 — PWA : manifest + Add to Home Screen
-**Complexité** : S
-
-### FEAT-02 — Embed SoundCloud avec timestamp (SC Widget JS API)
-**Complexité** : L
-
-### FEAT-03 — Partage public
-**Complexité** : M
-
-### FEAT-04 — Flow "Log from a set" dédié
-**Complexité** : M
-
-### FEAT-05 — Thumbnail placeholder coloré (initiales)
-**Complexité** : XS
-
-### FEAT-06 — Search global cross Library+IDs
-**Complexité** : S
-
-### FEAT-07 — Metadata améliorée TikTok/Instagram
-**Complexité** : M
-
-### FEAT-08 — Player global persistant
-**Complexité** : XL
+## Choses à éviter (rappel)
+
+- **Ne pas supprimer la colonne `status`** de la DB sans migration préalable
+- **Ne pas réintroduire `useSearchParams` dans `/ids/page.tsx`**
+- **Ne pas utiliser `git add -A`** sans vérifier — risque `.env.local`
+- **Ne pas bypasser `npm run build`** — valide TypeScript strictement
+- **Ne pas ajouter de dépendances npm** sans raison claire
+- **Ne pas modifier `supabase-server.ts`** sans tester les routes API
+- **Ne pas passer `user_id` manquant dans les INSERTs** — RLS rejette silencieusement
+- **Ne pas toucher IA / BPM / Spotify / Apple Music / Bandcamp** avant Phase 3/4
 
 ---
 
@@ -412,56 +357,14 @@ Frictions majeures identifiées sur iPhone en usage réel.
 - Import playlist YouTube/SoundCloud en masse
 - Export CSV/JSON Library ou crate
 - Stats dashboard : tracks par plateforme, par genre, IDs ouverts depuis combien de temps
-- Notifications IDs ouverts depuis longtemps (X jours)
+- Notifications IDs ouverts depuis longtemps
 - Tags libres multiples (compléter genre/mood)
 - Historique des modifications sur un track
-- Identification automatique (AudD, ACRCloud) — soumettre un clip
+- Identification automatique (AudD, ACRCloud)
 - Browser extension "Add to Digglist"
-- App native (Expo/RN) si la base web est solide
-- SoundCloud OAuth integration profonde (playlists, likes)
+- App native (Expo/RN)
+- SoundCloud OAuth integration (playlists, likes)
 - Discogs integration (possédé / wishlist)
-- Collaboration — partager une crate avec quelqu'un d'autre
-
----
-
-## Parking Lot — Ne pas développer maintenant
-
-- **Status pills** (To listen / To buy / To play / Inspiration) — décision finale, ne pas ré-ajouter dans l'UI
-- **Filtrage `?ids=1` URL param** — source du bug de navigation mobile original, ne jamais revenir
-- **Multi-user / équipes** — hors scope beta
-- **Commentaires sociaux** — hors scope
-- **Abonnement/paywall** — prématuré
-- **Server Components** dans les pages — toutes les pages sont "use client", pas de SSR nécessaire (app auth-only)
-- **IA / BPM** avant Phase 4
-
----
-
-## Décisions produit arrêtées
-
-### Status → Crates (final)
-Les statuts `To listen / To buy / To play / Inspiration` sont définitivement invisibles dans l'UI. L'organisation se fait par crates. La colonne `status` en DB est conservée pour les données existantes. Ne jamais ré-exposer dans l'UI.
-
-### record_type = source de vérité Library/IDs
-`record_type` en DB (`"track"` vs `"id_needed"`) est le séparateur autoritaire. Ne jamais revenir au filtrage par URL params (`?ids=1`) ni au check `track.status === "IDs Needed"`.
-
-### quick-add = tracks identifiés uniquement
-`/quick-add` est exclusivement pour les tracks identifiés. Les IDs passent par `/ids/new`.
-
-### Embed SoundCloud
-Widget officiel avec hash strippé. Normaliser `m.soundcloud.com` → `soundcloud.com`. Height 120 pour tracks, 300 pour sets. Timestamp non supporté nativement — JS API en option future (Phase 2).
-
-### BottomNav : 2 options dans Add sheet (Phase 1)
-"Add a track" + "Log an ID". "Log from a set" supprimé (redondant) jusqu'à Phase 2 (flow dédié).
-
----
-
-## Choses à éviter (rappel)
-
-- **Ne pas supprimer la colonne `status`** de la DB sans migration préalable
-- **Ne pas réintroduire `useSearchParams` dans `/ids/page.tsx`** — source du bug navigation mobile original
-- **Ne pas utiliser `git add -A`** sans vérifier — risque d'inclure `.env.local`
-- **Ne pas bypasser `npm run build`** — valide TypeScript strictement
-- **Ne pas ajouter de dépendances npm** sans raison claire
-- **Ne pas modifier `supabase-server.ts`** sans tester les routes API
-- **Ne pas passer `user_id` manquant dans les INSERTs** — la RLS rejette silencieusement
-- **Ne pas toucher IA / BPM / Spotify / Apple Music / Bandcamp** avant Phase 3/4
+- Player global persistant
+- BPM detection
+- Collaboration — partager une crate
