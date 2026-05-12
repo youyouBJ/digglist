@@ -609,7 +609,41 @@ function SetEmbed({ url }: { url: string }) {
     );
   }
 
-  return null;
+  /* Link card for Bandcamp / TikTok / Instagram sets */
+  const name = /bandcamp\.com/.test(url) ? "Bandcamp"
+    : /tiktok\.com/.test(url)    ? "TikTok"
+    : /instagram\.com/.test(url) ? "Instagram"
+    : null;
+
+  if (!name) return null;
+
+  const accent = name === "Bandcamp"  ? "#1da0c3"
+    : name === "Instagram" ? "#c13584"
+    : "var(--t2)";
+  const badge  = name === "Bandcamp" ? "bc" : name === "TikTok" ? "tt" : "ig";
+
+  return (
+    <div className="mx-5 sm:mx-8 mb-4">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-[10px] px-4 py-[13px] transition-opacity active:opacity-70"
+        style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
+      >
+        <div
+          className="shrink-0 w-8 h-8 rounded-[6px] flex items-center justify-center text-[11px] font-bold tracking-tight"
+          style={{ background: "var(--bg4)", border: "0.5px solid var(--rule2)", color: accent }}
+        >
+          {badge}
+        </div>
+        <span className="flex-1 text-[13px] font-medium" style={{ color: "var(--t2)" }}>
+          Open on {name}
+        </span>
+        <ExternalIcon />
+      </a>
+    </div>
+  );
 }
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */

@@ -36,6 +36,7 @@ function decodeEntities(str: string): string {
 function detectPlatform(url: string): string {
   if (/youtube\.com|youtu\.be/.test(url))  return "YouTube";
   if (/soundcloud\.com/.test(url))         return "SoundCloud";
+  if (/bandcamp\.com/.test(url))           return "Bandcamp";
   if (/discogs\.com/.test(url))            return "Discogs";
   if (/tiktok\.com/.test(url))             return "TikTok";
   if (/instagram\.com/.test(url))          return "Instagram";
@@ -177,6 +178,26 @@ async function fetchInstagram(url: string): Promise<Meta | null> {
   };
 }
 
+async function fetchBandcamp(url: string): Promise<Meta | null> {
+  try {
+    const oembed = `https://bandcamp.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const res    = await fetch(oembed, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const data = await res.json() as {
+      title?: string; author_name?: string; thumbnail_url?: string;
+    };
+    const rawTitle = data.title ?? "";
+    const { title, artist } = splitArtistTitle(rawTitle);
+    return {
+      title:    title || rawTitle,
+      artist:   data.author_name ?? artist,
+      imageUrl: data.thumbnail_url ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function fetchDiscogs(url: string): Promise<Meta | null> {
   const html = await fetchHtml(url);
   if (!html) return null;
@@ -230,8 +251,9 @@ export async function GET(request: NextRequest) {
 
   let meta: Meta | null = null;
   try {
-    if (platform === "YouTube")   meta = await fetchYouTube(url);
+    if (platform === "YouTube")        meta = await fetchYouTube(url);
     else if (platform === "SoundCloud") meta = await fetchSoundCloud(url);
+    else if (platform === "Bandcamp")   meta = await fetchBandcamp(url);
     else if (platform === "TikTok")     meta = await fetchTikTok(url);
     else if (platform === "Instagram")  meta = await fetchInstagram(url);
     else if (platform === "Discogs")    meta = await fetchDiscogs(url);
