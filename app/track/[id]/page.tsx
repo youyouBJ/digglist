@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
-import { getStatusColor } from "@/lib/constants";
 import { formatTimestamp, buildTimestampUrl } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
+import BottomNav from "@/app/components/BottomNav";
 
 export default function TrackDetailPage() {
   const user                              = useRequireAuth();
@@ -32,7 +32,7 @@ export default function TrackDetailPage() {
       await deleteTrack(id);
       router.push("/library");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to delete track.");
+      setError(e instanceof Error ? e.message : "Failed to delete.");
       setDeleting(false);
     }
   }
@@ -49,169 +49,384 @@ export default function TrackDetailPage() {
     );
   }
 
-  const statusColor = getStatusColor(track.status);
+  const isIds  = track.status === "IDs Needed";
+  const tsUrl  = buildTimestampUrl(track.sourceUrl, track.sourceTimestamp);
+  const hasTs  = track.sourceTimestamp !== null && track.sourceTimestamp !== undefined;
+
+  const metaTags = [track.genre, track.mood].filter(Boolean);
+
+  /* Days since discovery */
+  const daysSince = Math.floor(
+    (Date.now() - new Date(track.createdAt).getTime()) / 86_400_000
+  );
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+    <main className="min-h-screen flex flex-col pb-24 sm:pb-6"
+      style={{ background: "var(--bg)", color: "var(--t1)" }}>
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
-        <div className="w-full max-w-xl">
+      {/* ── Back bar ───────────────────────────────────────────────── */}
+      <div className="flex items-center px-5 sm:px-8 pt-4 pb-3 sm:pt-6">
+        <Link
+          href="/library"
+          className="flex items-center gap-2 text-[13px] transition-colors"
+          style={{ color: "var(--teal)" }}
+        >
+          <ArrowLeft />
+          Library
+        </Link>
+      </div>
 
-          <Link
-            href="/library"
-            className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors mb-8"
-          >
-            ← Library
-          </Link>
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <div className="flex items-start gap-4 px-5 sm:px-8 pb-5">
+        <DetailThumb track={track} />
 
-          {error && (
-            <p className="mb-6 text-sm text-red-400 text-center">{error}</p>
+        <div className="flex-1 min-w-0 pt-[2px]">
+          <p className="text-[11px] tracking-[0.10em] uppercase mb-1"
+            style={{ color: isIds ? "rgba(201,162,74,0.65)" : "var(--t3)" }}>
+            {track.artist || (isIds ? "Unknown artist" : " ")}
+          </p>
+          <h2 className="text-[20px] font-medium tracking-[-0.02em] leading-[1.2] mb-2"
+            style={{ color: isIds && !track.title ? "var(--amber)" : "var(--t1)" }}>
+            {track.title || (isIds ? "Unknown track" : "Untitled")}
+          </h2>
+
+          {metaTags.length > 0 && (
+            <p className="text-[11px] flex items-center gap-1" style={{ color: "var(--t3)" }}>
+              <span className="w-[5px] h-[5px] rounded-full shrink-0 inline-block"
+                style={{ background: isIds ? "var(--amber)" : "var(--teal)" }} />
+              {metaTags.join(" / ")}
+            </p>
           )}
+        </div>
+      </div>
 
-          {/* Title block */}
-          <div className="flex items-start gap-4 sm:gap-5 mb-8">
-            {track.imageUrl && (
-              <img
-                src={track.imageUrl}
-                alt={track.title}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shrink-0"
-              />
-            )}
-            <div className="flex items-start justify-between gap-3 flex-1 min-w-0">
-              <div className="min-w-0">
-                <h2 className={`text-2xl sm:text-3xl font-bold tracking-tight mb-1 leading-tight ${
-                  !track.title && track.status === "IDs Needed" ? "text-white/40 italic" : ""
-                }`}>
-                  {track.title || (track.status === "IDs Needed" ? "Unknown track" : "Untitled")}
-                </h2>
-                {track.artist && (
-                  <p className="text-base sm:text-lg text-white/50">{track.artist}</p>
-                )}
-              </div>
-              <span className={`shrink-0 mt-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold ${statusColor}`}>
-                {track.status}
-              </span>
-            </div>
-          </div>
+      {error && (
+        <p className="mx-5 sm:mx-8 mb-4 text-sm text-red-400">{error}</p>
+      )}
 
-          {/* Details */}
-          <div className="bg-[#161616] border border-white/8 rounded-2xl divide-y divide-white/5">
-            <DetailRow label="Platform" value={track.sourcePlatform} />
-            {track.sourceTimestamp !== null && (
-              <DetailRow
-                label="Timestamp"
-                value={`⏱ ${formatTimestamp(track.sourceTimestamp)}`}
-              />
+      {/* ── IDs Needed banner ──────────────────────────────────────── */}
+      {isIds && (
+        <div className="mx-5 sm:mx-8 mb-4 rounded-[10px] p-[13px_14px] flex gap-3"
+          style={{
+            background: "var(--amber-soft)",
+            border:     "0.5px solid var(--amber-rule)",
+          }}>
+          <BookmarkIcon />
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-medium mb-1" style={{ color: "var(--amber)" }}>
+              ID needed · open {daysSince === 0 ? "today" : `${daysSince}d`}
+            </p>
+            {track.notes && (
+              <p className="text-[12px] leading-[1.55] mb-3"
+                style={{ color: "rgba(201,162,74,0.70)" }}>
+                {track.notes}
+              </p>
             )}
-            {track.genre && <DetailRow label="Genre" value={track.genre} />}
-            {track.mood  && <DetailRow label="Mood"  value={track.mood} />}
-            {track.sourceUrl && (
-              <div className="flex items-baseline justify-between gap-4 px-6 py-4">
-                <span className="text-xs font-semibold uppercase tracking-widest text-white/30 shrink-0">
-                  Source
-                </span>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {hasTs && track.sourceUrl && (
                 <a
-                  href={buildTimestampUrl(track.sourceUrl, track.sourceTimestamp)}
+                  href={tsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-white/60 hover:text-white transition-colors underline underline-offset-2 text-right"
+                  className="inline-flex items-center gap-[5px] text-[11px] rounded-[6px] px-[10px] py-[5px] transition-colors"
+                  style={{
+                    color:   "var(--amber)",
+                    border:  "0.5px solid var(--amber-rule)",
+                    background: "transparent",
+                  }}
                 >
-                  {track.sourceTimestamp !== null
-                    ? `Open at ${formatTimestamp(track.sourceTimestamp)} →`
-                    : "Open source →"}
-                </a>
-              </div>
-            )}
-            <DetailRow
-              label="Added"
-              value={new Date(track.createdAt).toLocaleDateString("en-GB", {
-                day: "numeric", month: "long", year: "numeric",
-              })}
-            />
-          </div>
-
-          {/* IDs Needed guidance block */}
-          {track.status === "IDs Needed" && (
-            <div className="mt-4 bg-orange-500/[0.07] border border-orange-500/20 rounded-2xl px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-orange-400/70 mb-2">
-                IDs Needed
-              </p>
-              <p className="text-sm text-white/50 leading-relaxed">
-                The track identity is unknown. Once identified, edit to add the title and artist, then update the status.
-              </p>
-              {track.sourceTimestamp !== null && track.sourceUrl && (
-                <a
-                  href={buildTimestampUrl(track.sourceUrl, track.sourceTimestamp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-4 text-sm text-orange-300 hover:text-orange-200 transition-colors font-medium"
-                >
-                  ⏱ Listen from {formatTimestamp(track.sourceTimestamp)} →
+                  <TimestampIcon />
+                  Listen from {formatTimestamp(track.sourceTimestamp!)}
                 </a>
               )}
-            </div>
-          )}
-
-          {track.notes && (
-            <div className="mt-4 bg-[#161616] border border-white/8 rounded-2xl px-6 py-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">Notes</p>
-              <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{track.notes}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="mt-8 flex items-center gap-4">
-            <Link
-              href={`/track/${track.id}/edit`}
-              className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
-            >
-              Edit
-            </Link>
-
-            {confirmDelete ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-white/50">Delete this track?</span>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors font-medium disabled:opacity-50"
-                >
-                  {deleting ? "Deleting…" : "Yes, delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={deleting}
-                  className="text-sm text-white/30 hover:text-white/60 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="px-6 py-2.5 rounded-full border border-white/10 text-white/40 text-sm hover:border-red-500/40 hover:text-red-400 transition-colors"
+              <Link
+                href={`/track/${id}/edit`}
+                className="inline-flex items-center gap-[5px] text-[11px] rounded-[6px] px-[10px] py-[5px] transition-colors"
+                style={{
+                  color:   "var(--amber)",
+                  border:  "0.5px solid var(--amber-rule)",
+                  background: "transparent",
+                }}
               >
-                Delete
-              </button>
-            )}
+                <CheckIcon />
+                Mark as found
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
+      )}
+
+      {/* ── Detail sections ────────────────────────────────────────── */}
+      <div style={{ borderTop: "0.5px solid var(--rule)" }}>
+
+        <SectionRow label="Platform">
+          <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+            {track.sourcePlatform}
+          </span>
+        </SectionRow>
+
+        {hasTs && (
+          <SectionRow label="Timestamp">
+            <span
+              className="text-[15px] font-medium tracking-[-0.01em]"
+              style={{
+                color:      "var(--amber)",
+                fontFamily: "var(--font-jb-mono, monospace)",
+                fontFeatureSettings: '"tnum"',
+              }}
+            >
+              {formatTimestamp(track.sourceTimestamp!)}
+            </span>
+          </SectionRow>
+        )}
+
+        {(track.genre || track.mood) && (
+          <SectionRow label="Tags">
+            <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+              {[track.genre, track.mood].filter(Boolean).join(" · ")}
+            </span>
+          </SectionRow>
+        )}
+
+        {track.sourceUrl && (
+          <SectionRow label="Source">
+            <a
+              href={tsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[13px] underline underline-offset-2 transition-colors max-w-[200px] truncate"
+              style={{
+                color:                 "var(--slate)",
+                textDecorationColor:   "rgba(82,114,160,0.35)",
+              }}
+            >
+              {hasTs
+                ? `Open at ${formatTimestamp(track.sourceTimestamp!)} →`
+                : "Open source →"}
+            </a>
+          </SectionRow>
+        )}
+
+        {track.notes && !isIds && (
+          <div style={{ padding: "14px 20px", borderBottom: "0.5px solid var(--rule)" }}
+            className="sm:px-8">
+            <p className="text-[10px] tracking-[0.12em] uppercase mb-2"
+              style={{ color: "var(--t4)" }}>Note</p>
+            <p className="text-[13px] leading-[1.65]" style={{ color: "var(--t2)" }}>
+              {track.notes}
+            </p>
+          </div>
+        )}
+
+        <SectionRow label="Discovered">
+          <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+            {new Date(track.createdAt).toLocaleDateString("en-GB", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          </span>
+        </SectionRow>
+
+        {!isIds && (
+          <SectionRow label="Status">
+            <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+              {track.status}
+            </span>
+          </SectionRow>
+        )}
+      </div>
+
+      {/* ── Action bar ─────────────────────────────────────────────── */}
+      <div
+        className="flex items-center gap-2 px-5 sm:px-8 pt-3 pb-4 mt-1"
+        style={{ borderTop: "0.5px solid var(--rule)" }}
+      >
+        {/* Edit */}
+        <Link
+          href={`/track/${id}/edit`}
+          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors"
+          style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
+        >
+          <EditIcon />
+          Edit
+        </Link>
+
+        {/* Open source */}
+        {track.sourceUrl && (
+          <a
+            href={tsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors"
+            style={{ background: "var(--t1)", color: "var(--bg)" }}
+          >
+            <ExternalIcon />
+            {hasTs ? "Open at timestamp" : "Open source"}
+          </a>
+        )}
+
+        {/* Delete */}
+        {confirmDelete ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-[12px] text-red-400 hover:text-red-300 transition-colors font-medium disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Confirm delete"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="text-[12px] transition-colors"
+              style={{ color: "var(--t3)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
+            style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t3)" }}
+            aria-label="Delete track"
+          >
+            <TrashIcon />
+          </button>
+        )}
+      </div>
+
+      <BottomNav />
     </main>
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+/* ─── Detail thumb ───────────────────────────────────────────────────────── */
+
+function DetailThumb({ track }: { track: Track }) {
+  const size = { width: 78, height: 78, borderRadius: 8 };
+
+  if (track.imageUrl) {
+    return (
+      <img
+        src={track.imageUrl}
+        alt={track.title}
+        className="shrink-0 object-cover"
+        style={{ ...size, border: "0.5px solid var(--rule2)" }}
+      />
+    );
+  }
+
+  if (track.status === "IDs Needed") {
+    return (
+      <div
+        className="shrink-0 flex items-center justify-center text-[22px] font-medium"
+        style={{ ...size, background: "var(--amber-soft)", border: "0.5px solid var(--amber-rule)", color: "var(--amber)" }}
+      >
+        ?
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-baseline justify-between gap-4 px-6 py-4">
-      <span className="text-xs font-semibold uppercase tracking-widest text-white/30 shrink-0">
+    <div
+      className="shrink-0 flex items-center justify-center"
+      style={{ ...size, background: "var(--bg4)", border: "0.5px solid var(--rule2)" }}
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth={1} style={{ color: "var(--t4)" }}>
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3" />
+        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    </div>
+  );
+}
+
+/* ─── Section row ────────────────────────────────────────────────────────── */
+
+function SectionRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="flex items-baseline justify-between gap-4 px-5 sm:px-8 py-[14px]"
+      style={{ borderBottom: "0.5px solid var(--rule)" }}
+    >
+      <span className="text-[10px] tracking-[0.12em] uppercase shrink-0"
+        style={{ color: "var(--t4)" }}>
         {label}
       </span>
-      <span className="text-sm text-white/60 text-right">{value}</span>
+      {children}
     </div>
+  );
+}
+
+/* ─── Icons ──────────────────────────────────────────────────────────────── */
+
+function ArrowLeft() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+function BookmarkIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+      stroke="none" style={{ color: "var(--amber)", flexShrink: 0, marginTop: 2 }}>
+      <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+    </svg>
+  );
+}
+
+function TimestampIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" d="M12 7v5l3 3" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  );
+}
+
+function ExternalIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
   );
 }

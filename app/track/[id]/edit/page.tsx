@@ -8,18 +8,20 @@ import { PLATFORMS, STATUSES, EMPTY_TRACK_FORM } from "@/lib/constants";
 import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
-import { Field, inputClass, PageLoader, PageError } from "@/app/components/ui";
+import { PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
+import BottomNav from "@/app/components/BottomNav";
 
 export default function EditTrackPage() {
-  const user            = useRequireAuth();
-  const { id }          = useParams<{ id: string }>();
-  const router          = useRouter();
-  const [track, setTrack]           = useState<Track | null | undefined>(undefined);
-  const [form, setForm]             = useState<TrackFormState>(EMPTY_TRACK_FORM);
+  const user  = useRequireAuth();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const [track, setTrack]                     = useState<Track | null | undefined>(undefined);
+  const [form, setForm]                       = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [storedTimestamp, setStoredTimestamp] = useState<number | null>(null);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState<string | null>(null);
+  const [saving, setSaving]                   = useState(false);
+  const [error, setError]                     = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -52,7 +54,6 @@ export default function EditTrackPage() {
     setSaving(true);
     setError(null);
     try {
-      // Re-detect timestamp from current URL — updates if URL was changed
       const finalTimestamp = extractTimestampFromUrl(form.url) ?? storedTimestamp;
       await updateTrack(id, {
         title:           form.title,
@@ -85,162 +86,285 @@ export default function EditTrackPage() {
     );
   }
 
+  const detectedTs = extractTimestampFromUrl(form.url) ?? storedTimestamp;
+  const isIds      = form.status === "IDs Needed";
+
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+    <main
+      className="min-h-screen flex flex-col pb-24 sm:pb-6"
+      style={{ background: "var(--bg)", color: "var(--t1)" }}
+    >
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
-        <div className="w-full max-w-xl">
+      {/* ── Back bar ─────────────────────────────────────────────── */}
+      <div className="flex items-center px-5 sm:px-8 pt-4 pb-3 sm:pt-6">
+        <Link
+          href={`/track/${id}`}
+          className="flex items-center gap-2 text-[13px] transition-colors"
+          style={{ color: "var(--teal)" }}
+        >
+          <ArrowLeft />
+          Track detail
+        </Link>
+      </div>
+
+      {/* ── Page title ───────────────────────────────────────────── */}
+      <div className="px-5 sm:px-8 pb-5">
+        <h2 className="text-[22px] font-medium tracking-[-0.03em]"
+          style={{ color: "var(--t1)" }}>
+          Edit track
+        </h2>
+        {(track.title || track.artist) && (
+          <p className="text-[13px] mt-[3px]" style={{ color: "var(--t3)" }}>
+            {[track.artist, track.title].filter(Boolean).join(" — ")}
+          </p>
+        )}
+      </div>
+
+      {/* ── Cover preview ────────────────────────────────────────── */}
+      {form.imageUrl && (
+        <div
+          className="mx-5 sm:mx-8 mb-4 flex items-center gap-3 rounded-[10px] px-4 py-3"
+          style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
+        >
+          <img
+            src={form.imageUrl}
+            alt="Cover"
+            className="w-11 h-11 rounded-lg object-cover shrink-0"
+            style={{ border: "0.5px solid var(--rule2)" }}
+          />
+          <p className="text-[12px] flex-1 truncate" style={{ color: "var(--t3)" }}>
+            Cover image attached
+          </p>
+          <button
+            type="button"
+            onClick={() => set("imageUrl", "")}
+            className="shrink-0 text-[11px] transition-colors"
+            style={{ color: "var(--t4)" }}
+            aria-label="Remove cover"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="mx-5 sm:mx-8 mb-4 text-[13px] text-red-400">{error}</p>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+
+        {/* ── Section: Track info ──────────────────────────────────── */}
+        <FormSection label="Track info">
+          <FormRow label="Title" required>
+            <input
+              type="text"
+              placeholder={isIds ? "Unknown track" : "Track title"}
+              required
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+          <FormRow label="Artist" last>
+            <input
+              type="text"
+              placeholder={isIds ? "Unknown artist" : "Artist name"}
+              value={form.artist}
+              onChange={(e) => set("artist", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+        </FormSection>
+
+        {/* ── Section: Source ──────────────────────────────────────── */}
+        <FormSection label="Source">
+          <FormRow label="Platform">
+            <select
+              value={form.platform}
+              onChange={(e) => set("platform", e.target.value)}
+              className="form-input"
+            >
+              {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </FormRow>
+          <FormRow label="URL" last={detectedTs === null}>
+            <input
+              type="url"
+              placeholder="https://…"
+              value={form.url}
+              onChange={(e) => set("url", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+          {detectedTs !== null && (
+            <FormRow label="Timestamp" last readonly>
+              <span
+                className="text-[15px] font-medium"
+                style={{
+                  color:               "var(--amber)",
+                  fontFamily:          "var(--font-jb-mono, monospace)",
+                  fontFeatureSettings: '"tnum"',
+                }}
+              >
+                {formatTimestamp(detectedTs)}
+              </span>
+            </FormRow>
+          )}
+        </FormSection>
+
+        {/* ── Section: Tags ────────────────────────────────────────── */}
+        <FormSection label="Tags">
+          <FormRow label="Genre">
+            <input
+              type="text"
+              placeholder="Jazz, House, Soul…"
+              value={form.genre}
+              onChange={(e) => set("genre", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+          <FormRow label="Mood" last>
+            <input
+              type="text"
+              placeholder="Chill, Dark, Uplifting…"
+              value={form.mood}
+              onChange={(e) => set("mood", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+        </FormSection>
+
+        {/* ── Section: Status ──────────────────────────────────────── */}
+        <FormSection label="Status">
+          <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
+            {STATUSES.map((s) => {
+              const active = form.status === s;
+              const ids    = s === "IDs Needed";
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => set("status", s)}
+                  className="px-[13px] py-[6px] rounded-full text-[12px] font-medium transition-colors"
+                  style={active
+                    ? ids
+                      ? { background: "var(--amber-fill)", color: "var(--amber)", border: "0.5px solid var(--amber-rule)" }
+                      : { background: "var(--t1)", color: "var(--bg)", border: "0.5px solid transparent" }
+                    : { background: "var(--bg3)", color: "var(--t3)", border: "0.5px solid var(--rule2)" }
+                  }
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </FormSection>
+
+        {/* ── Section: Notes ───────────────────────────────────────── */}
+        <FormSection label="Notes">
+          <div className="px-5 sm:px-8 py-4">
+            <textarea
+              rows={4}
+              placeholder="Context, feelings, where you found it…"
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              className="form-input w-full resize-none"
+            />
+          </div>
+        </FormSection>
+
+        {/* ── Action bar ───────────────────────────────────────────── */}
+        <div
+          className="flex items-center gap-3 px-5 sm:px-8 pt-3 pb-4 mt-auto"
+          style={{ borderTop: "0.5px solid var(--rule)" }}
+        >
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 h-11 rounded-[10px] text-[13px] font-medium transition-colors disabled:opacity-50"
+            style={{ background: "var(--t1)", color: "var(--bg)" }}
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </button>
           <Link
             href={`/track/${id}`}
-            className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors mb-8"
+            className="h-11 px-5 flex items-center rounded-[10px] text-[13px] transition-colors"
+            style={{ background: "var(--bg3)", color: "var(--t3)", border: "0.5px solid var(--rule2)" }}
           >
-            ← Back to track
+            Cancel
           </Link>
-
-          <h2 className="text-2xl font-bold mb-8 tracking-tight">Edit track</h2>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {error && (
-              <p className="text-sm text-red-400 text-center">{error}</p>
-            )}
-
-            {/* Cover preview */}
-            {form.imageUrl && (
-              <div className="flex items-center gap-3 bg-[#161616] border border-white/8 rounded-2xl px-4 py-3">
-                <img
-                  src={form.imageUrl}
-                  alt="Current cover"
-                  className="w-11 h-11 rounded-lg object-cover shrink-0"
-                />
-                <p className="text-xs text-white/25 truncate flex-1">Cover image attached</p>
-                <button
-                  type="button"
-                  onClick={() => set("imageUrl", "")}
-                  className="shrink-0 text-xs text-white/25 hover:text-red-400 transition-colors"
-                  aria-label="Remove cover"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            <Field label="Track title" required>
-              <input
-                type="text"
-                placeholder="e.g. Midnight Rider"
-                required
-                value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Artist">
-              <input
-                type="text"
-                placeholder="e.g. Allman Brothers Band"
-                value={form.artist}
-                onChange={(e) => set("artist", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Field label="Platform" className="sm:w-1/2">
-                <select
-                  value={form.platform}
-                  onChange={(e) => set("platform", e.target.value)}
-                  className={inputClass}
-                >
-                  {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </Field>
-              <Field label="Source URL" className="sm:w-1/2">
-                <input
-                  type="url"
-                  placeholder="https://…"
-                  value={form.url}
-                  onChange={(e) => set("url", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-
-            {/* Timestamp — computed from URL, read-only */}
-            {(extractTimestampFromUrl(form.url) ?? storedTimestamp) !== null && (
-              <p className="text-xs text-orange-400/70 font-mono -mt-1 px-1">
-                ⏱ Timestamp: {formatTimestamp((extractTimestampFromUrl(form.url) ?? storedTimestamp)!)}
-              </p>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Field label="Genre" className="sm:w-1/2">
-                <input
-                  type="text"
-                  placeholder="e.g. Jazz, House, Soul…"
-                  value={form.genre}
-                  onChange={(e) => set("genre", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Mood" className="sm:w-1/2">
-                <input
-                  type="text"
-                  placeholder="e.g. Chill, Dark, Uplifting…"
-                  value={form.mood}
-                  onChange={(e) => set("mood", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-
-            <Field label="Status">
-              <div className="flex flex-wrap gap-4 pt-1">
-                {STATUSES.map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="status"
-                      value={s}
-                      checked={form.status === s}
-                      onChange={() => set("status", s)}
-                      className="accent-white"
-                    />
-                    <span className="text-sm text-white/60 group-hover:text-white transition-colors">{s}</span>
-                  </label>
-                ))}
-              </div>
-            </Field>
-
-            <Field label="Notes">
-              <textarea
-                rows={3}
-                placeholder="Context, feelings, where you found it…"
-                value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                className={`${inputClass} resize-none`}
-              />
-            </Field>
-
-            <div className="flex gap-3 mt-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 py-3 rounded-full bg-white text-black font-semibold text-base hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? "Saving…" : "Save changes"}
-              </button>
-              <Link
-                href={`/track/${id}`}
-                className="px-6 py-3 rounded-full border border-white/10 text-white/40 text-sm hover:border-white/25 hover:text-white/70 transition-colors flex items-center"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
         </div>
-      </section>
+      </form>
+
+      <BottomNav />
+
+      <style>{`
+        .form-input {
+          width: 100%;
+          background: transparent;
+          color: var(--t1);
+          font-size: 14px;
+          outline: none;
+          border: none;
+        }
+        .form-input::placeholder { color: var(--t4); }
+        select.form-input option { background: var(--bg2); }
+      `}</style>
     </main>
+  );
+}
+
+/* ─── Form layout helpers ────────────────────────────────────────────────── */
+
+function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ borderTop: "0.5px solid var(--rule)" }}>
+      <p
+        className="px-5 sm:px-8 pt-[14px] pb-[6px] text-[10px] tracking-[0.12em] uppercase"
+        style={{ color: "var(--t4)" }}
+      >
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function FormRow({
+  label, children, last, required, readonly,
+}: {
+  label: string;
+  children: React.ReactNode;
+  last?: boolean;
+  required?: boolean;
+  readonly?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-4 px-5 sm:px-8 py-[14px]"
+      style={{ borderBottom: last ? undefined : "0.5px solid var(--rule)" }}
+    >
+      <span
+        className="text-[13px] shrink-0 w-[80px]"
+        style={{ color: readonly ? "var(--t4)" : "var(--t3)" }}
+      >
+        {label}{required && <span style={{ color: "var(--amber)" }}> *</span>}
+      </span>
+      <div className="flex-1 min-w-0 text-right">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Icons ──────────────────────────────────────────────────────────────── */
+
+function ArrowLeft() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
+    </svg>
   );
 }
