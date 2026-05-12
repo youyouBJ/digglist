@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getCrates, getCrateTrackIds, type CrateWithCount } from "@/lib/supabase-crates";
 import { PLATFORMS, STATUSES } from "@/lib/constants";
@@ -29,73 +28,48 @@ function relativeDate(dateStr: string): string {
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LibraryPage() {
-  return (
-    <Suspense fallback={<PageLoader />}>
-      <LibraryPageInner />
-    </Suspense>
-  );
-}
+  const user = useRequireAuth();
 
-function LibraryPageInner() {
-  const user         = useRequireAuth();
-  const searchParams = useSearchParams();
-  const statusFromUrl = useRef(false);
-
-  const [tracks, setTracks]           = useState<Track[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-  const [search, setSearch]           = useState("");
-  const [platformFilter, setPlatform] = useState("");
-  const [statusFilter, setStatus]     = useState("");
-  const [confirmId, setConfirmId]     = useState<string | null>(null);
+  const [allTracks, setAllTracks]       = useState<Track[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+  const [search, setSearch]             = useState("");
+  const [platformFilter, setPlatform]   = useState("");
+  const [statusFilter, setStatus]       = useState("");
+  const [confirmId, setConfirmId]       = useState<string | null>(null);
 
   /* Crates */
-  const [crates, setCrates]                     = useState<CrateWithCount[]>([]);
-  const [crateFilter, setCrateFilter]           = useState("");
-  const [crateTrackIds, setCrateTrackIds]       = useState<Set<string> | null>(null);
-  const [loadingCrateFilter, setLoadingCrateFilter] = useState(false);
+  const [crates, setCrates]               = useState<CrateWithCount[]>([]);
+  const [crateFilter, setCrateFilter]     = useState("");
+  const [crateTrackIds, setCrateTrackIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      getTracks(),
-      getCrates(),
-    ])
-      .then(([t, c]) => { setTracks(t); setCrates(c); })
+    Promise.all([getTracks(), getCrates()])
+      .then(([t, c]) => { setAllTracks(t); setCrates(c); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [user]);
 
   useEffect(() => {
     if (!crateFilter) { setCrateTrackIds(null); return; }
-    setLoadingCrateFilter(true);
     getCrateTrackIds(crateFilter)
       .then((ids) => setCrateTrackIds(new Set(ids)))
-      .catch(() => setCrateTrackIds(null))
-      .finally(() => setLoadingCrateFilter(false));
+      .catch(() => setCrateTrackIds(null));
   }, [crateFilter]);
-
-  /* Sync status filter with ?ids=1 URL param — reactive to soft navigation */
-  useEffect(() => {
-    const hasIds = searchParams.get("ids") === "1";
-    if (hasIds) {
-      setStatus("IDs Needed");
-      statusFromUrl.current = true;
-    } else if (statusFromUrl.current) {
-      setStatus("");
-      statusFromUrl.current = false;
-    }
-  }, [searchParams]);
 
   if (!user) return <PageLoader />;
 
-  const idsCount  = tracks.filter((t) => t.status === "IDs Needed").length;
+  /* IDs Needed live in /ids — exclude from Library */
+  const idsCount = allTracks.filter((t) => t.status === "IDs Needed").length;
+  const tracks   = allTracks.filter((t) => t.status !== "IDs Needed");
+
   const hasFilter = search !== "" || platformFilter !== "" || statusFilter !== "" || crateFilter !== "";
 
   const filtered = tracks.filter((t) => {
     if (crateFilter && crateTrackIds && !crateTrackIds.has(t.id)) return false;
-    if (platformFilter && t.sourcePlatform !== platformFilter) return false;
-    if (statusFilter   && t.status         !== statusFilter)   return false;
+    if (platformFilter && t.sourcePlatform !== platformFilter)     return false;
+    if (statusFilter   && t.status         !== statusFilter)       return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -112,7 +86,7 @@ function LibraryPageInner() {
   async function handleDelete(id: string) {
     try {
       await deleteTrack(id);
-      setTracks((prev) => prev.filter((t) => t.id !== id));
+      setAllTracks((prev) => prev.filter((t) => t.id !== id));
       setConfirmId(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete track.");
@@ -130,14 +104,12 @@ function LibraryPageInner() {
           style={{ color: "var(--t3)" }}>
           Your library
         </p>
-        <div className="flex items-start justify-between">
-          <h1 className="text-[30px] font-medium tracking-[-0.04em] leading-none"
-            style={{ color: "var(--t1)" }}>
-            Library
-          </h1>
-        </div>
+        <h1 className="text-[30px] font-medium tracking-[-0.04em] leading-none"
+          style={{ color: "var(--t1)" }}>
+          Library
+        </h1>
 
-        {!loading && tracks.length > 0 && (
+        {!loading && allTracks.length > 0 && (
           <div className="flex items-center gap-4 mt-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-[18px] font-medium tracking-[-0.03em] leading-none"
@@ -149,13 +121,13 @@ function LibraryPageInner() {
 
             <div className="w-px h-6" style={{ background: "var(--rule2)" }} />
 
-            <div className="flex flex-col gap-0.5">
+            <Link href="/ids" className="flex flex-col gap-0.5">
               <span className="text-[18px] font-medium tracking-[-0.03em] leading-none"
                 style={{ color: idsCount > 0 ? "var(--amber)" : "var(--t3)", fontFeatureSettings: '"tnum"' }}>
                 {idsCount}
               </span>
               <span className="text-[11px]" style={{ color: "var(--t3)" }}>IDs needed</span>
-            </div>
+            </Link>
 
             <div className="w-px h-6" style={{ background: "var(--rule2)" }} />
 
@@ -209,35 +181,14 @@ function LibraryPageInner() {
           <div className="flex items-center gap-2 overflow-x-auto px-5 sm:px-8 pb-3"
             style={{ scrollbarWidth: "none" }}>
 
-            {/* All */}
             <FilterPill
               label="All"
               active={!statusFilter && !platformFilter}
               onClick={() => { setStatus(""); setPlatform(""); }}
             />
 
-            {/* IDs needed */}
-            {idsCount > 0 && (
-              <button
-                type="button"
-                onClick={() => setStatus(statusFilter === "IDs Needed" ? "" : "IDs Needed")}
-                className="flex items-center gap-1.5 shrink-0 h-[30px] px-3 rounded-full text-[12px] transition-colors"
-                style={{
-                  background: statusFilter === "IDs Needed" ? "var(--amber-fill)" : "var(--amber-soft)",
-                  border:     "0.5px solid var(--amber-rule)",
-                  color:      "var(--amber)",
-                }}
-              >
-                IDs needed
-                <span className="text-[10px] font-semibold px-1 rounded-md leading-[15px] min-w-[15px] text-center"
-                  style={{ background: "var(--amber)", color: "#1a1000" }}>
-                  {idsCount}
-                </span>
-              </button>
-            )}
-
-            {/* Status pills (excluding IDs Needed handled above) */}
-            {STATUSES.filter(s => s !== "IDs Needed").map((s) => (
+            {/* Status pills — IDs Needed excluded (those live on /ids) */}
+            {STATUSES.filter((s) => s !== "IDs Needed").map((s) => (
               <FilterPill
                 key={s}
                 label={s}
@@ -250,16 +201,16 @@ function LibraryPageInner() {
             <select
               value={platformFilter}
               onChange={(e) => setPlatform(e.target.value)}
-              className="shrink-0 h-[30px] px-2.5 rounded-full text-[12px] focus:outline-none transition-colors"
+              className="shrink-0 h-[30px] px-2.5 rounded-full text-[12px] focus:outline-none"
               style={{
-                background:   "transparent",
-                border:       "0.5px solid var(--rule2)",
-                color:        platformFilter ? "var(--t1)" : "var(--t3)",
-                appearance:   "none",
-                paddingRight: "1.5rem",
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23585754' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                backgroundRepeat:   "no-repeat",
-                backgroundPosition: "right 8px center",
+                background:          "transparent",
+                border:              "0.5px solid var(--rule2)",
+                color:               platformFilter ? "var(--t1)" : "var(--t3)",
+                appearance:          "none",
+                paddingRight:        "1.5rem",
+                backgroundImage:     `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23585754' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                backgroundRepeat:    "no-repeat",
+                backgroundPosition:  "right 8px center",
               }}
             >
               <option value="">Platform</option>
@@ -289,7 +240,7 @@ function LibraryPageInner() {
               <button
                 type="button"
                 onClick={() => { setSearch(""); setPlatform(""); setStatus(""); setCrateFilter(""); }}
-                className="shrink-0 text-[11px] transition-colors underline underline-offset-2"
+                className="shrink-0 text-[11px] underline underline-offset-2"
                 style={{ color: "var(--t3)" }}
               >
                 Clear
@@ -339,46 +290,27 @@ function TrackRow({
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
 }) {
-  const isIds = track.status === "IDs Needed";
-
-  // Dot-separated meta tags (editorial style, no pills)
-  const metaTags = [
-    track.sourcePlatform,
-    track.genre,
-    track.mood,
-  ].filter(Boolean);
+  const metaTags = [track.sourcePlatform, track.genre, track.mood].filter(Boolean);
 
   return (
     <li
       className="group relative"
-      style={{
-        borderBottom:   "0.5px solid var(--rule)",
-        borderLeft:     isIds ? "1.5px solid var(--amber)" : "none",
-        background:     isIds ? "var(--amber-soft)" : "transparent",
-      }}
+      style={{ borderBottom: "0.5px solid var(--rule)" }}
     >
       <Link
         href={`/track/${track.id}`}
         className="flex items-start gap-3 px-5 py-[13px] sm:px-8"
       >
-        {/* Thumb */}
         <TrackThumb track={track} />
 
-        {/* Body */}
         <div className="flex-1 min-w-0">
-          {/* Artist */}
-          <p className="text-[11px] mb-[2px] truncate"
-            style={{ color: isIds ? "rgba(201,162,74,0.65)" : "var(--t3)" }}>
-            {track.artist || (isIds ? "Unknown artist" : "")}
+          <p className="text-[11px] mb-[2px] truncate" style={{ color: "var(--t3)" }}>
+            {track.artist}
           </p>
-
-          {/* Title */}
           <p className="text-[14px] font-medium tracking-[-0.01em] leading-[1.25] truncate mb-[7px]"
-            style={{ color: isIds && !track.title ? "var(--amber)" : "var(--t1)" }}>
-            {track.title || (isIds ? "Unknown track" : "Untitled")}
+            style={{ color: "var(--t1)" }}>
+            {track.title || "Untitled"}
           </p>
-
-          {/* Meta — dot separated */}
           {metaTags.length > 0 && (
             <p className="text-[11px] leading-none mb-[5px]" style={{ color: "var(--t3)" }}>
               {metaTags.map((tag, i) => (
@@ -389,15 +321,6 @@ function TrackRow({
               ))}
             </p>
           )}
-
-          {/* IDs chip */}
-          {isIds && (
-            <p className="text-[10px] font-medium mb-[4px]" style={{ color: "var(--amber)" }}>
-              ◆ ID needed
-            </p>
-          )}
-
-          {/* Note */}
           {track.notes && (
             <p className="text-[11px] leading-[1.5] line-clamp-2 mt-[2px]"
               style={{ color: "var(--t3)" }}>
@@ -406,14 +329,13 @@ function TrackRow({
           )}
         </div>
 
-        {/* Right — timestamp + date */}
         <div className="flex flex-col items-end gap-[3px] shrink-0 pt-[1px]">
           {track.sourceTimestamp !== null && track.sourceTimestamp !== undefined && (
             <span
-              className="text-[11px] leading-none font-mono whitespace-nowrap"
+              className="text-[11px] leading-none whitespace-nowrap"
               style={{
-                color:      isIds ? "var(--amber)" : "var(--t3)",
-                fontFamily: "var(--font-jb-mono, var(--font-geist-mono, monospace))",
+                color:               "var(--t3)",
+                fontFamily:          "var(--font-jb-mono, var(--font-geist-mono, monospace))",
                 fontFeatureSettings: '"tnum"',
               }}
             >
@@ -427,17 +349,16 @@ function TrackRow({
         </div>
       </Link>
 
-      {/* Delete zone */}
       <div className="px-5 sm:px-8 pb-2 flex items-center gap-3 -mt-1">
         {confirming ? (
           <>
             <span className="text-[11px]" style={{ color: "var(--t3)" }}>Delete?</span>
             <button type="button" onClick={onConfirmDelete}
-              className="text-[11px] font-medium text-red-400 hover:text-red-300 transition-colors">
+              className="text-[11px] font-medium text-red-400">
               Yes, delete
             </button>
             <button type="button" onClick={onCancelDelete}
-              className="text-[11px] transition-colors" style={{ color: "var(--t3)" }}>
+              className="text-[11px]" style={{ color: "var(--t3)" }}>
               Cancel
             </button>
           </>
@@ -469,31 +390,10 @@ function TrackThumb({ track }: { track: Track }) {
       />
     );
   }
-
-  if (track.status === "IDs Needed") {
-    return (
-      <div
-        className="shrink-0 flex items-center justify-center text-[13px] font-medium"
-        style={{
-          width: 44, height: 44, borderRadius: 5,
-          background: "var(--amber-soft)",
-          border:     "0.5px solid var(--amber-rule)",
-          color:      "var(--amber)",
-        }}
-      >
-        ?
-      </div>
-    );
-  }
-
   return (
     <div
       className="shrink-0 flex items-center justify-center"
-      style={{
-        width: 44, height: 44, borderRadius: 5,
-        background: "var(--bg4)",
-        border:     "0.5px solid var(--rule2)",
-      }}
+      style={{ width: 44, height: 44, borderRadius: 5, background: "var(--bg4)", border: "0.5px solid var(--rule2)" }}
     >
       <VinylIcon />
     </div>
@@ -502,15 +402,7 @@ function TrackThumb({ track }: { track: Track }) {
 
 /* ─── Filter pill ────────────────────────────────────────────────────────── */
 
-function FilterPill({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -550,7 +442,7 @@ function VinylIcon() {
   );
 }
 
-/* ─── Empty / fallback states ────────────────────────────────────────────── */
+/* ─── Empty state ────────────────────────────────────────────────────────── */
 
 function EmptyState() {
   return (
@@ -562,7 +454,7 @@ function EmptyState() {
       </p>
       <Link
         href="/quick-add"
-        className="mt-1 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-colors"
+        className="mt-1 px-5 py-2.5 rounded-xl text-[13px] font-medium"
         style={{ background: "var(--t1)", color: "var(--bg)" }}
       >
         + Add your first track

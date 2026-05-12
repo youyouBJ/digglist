@@ -134,6 +134,7 @@ export default function BottomNav() {
   }
 
   const onLibrary = path === "/library" || path.startsWith("/track/");
+  const onIds     = path === "/ids";
   const onCrates  = path === "/crates" || path.startsWith("/crates/");
 
   const navBg     = "rgba(20,20,22,0.97)";
@@ -295,11 +296,11 @@ export default function BottomNav() {
 
           {/* IDs */}
           <Link
-            href="/library?ids=1"
+            href="/ids"
             className="flex flex-col items-center gap-[3px] px-3 py-1"
             style={{ color: amberTxt }}
           >
-            <BookmarkIcon active={false} />
+            <BookmarkIcon active={onIds} />
             <span className="text-[10px]">IDs</span>
           </Link>
 

@@ -93,7 +93,7 @@ export default function CratesPage() {
 
           {/* ── IDs Needed — pinned virtual crate ────────────────── */}
           <Link
-            href="/library?ids=1"
+            href="/ids"
             className="flex items-center gap-4 px-5 sm:px-8 py-[14px] transition-opacity active:opacity-70"
             style={{ borderBottom: "0.5px solid var(--rule)", background: "var(--amber-soft)" }}
           >
