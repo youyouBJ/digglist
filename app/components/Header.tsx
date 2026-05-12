@@ -27,37 +27,49 @@ export default function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-white/10 shrink-0">
+    /* Desktop only — mobile uses BottomNav */
+    <header className="hidden sm:flex items-center justify-between px-8 py-5 border-b shrink-0"
+      style={{ borderColor: "var(--rule)", background: "var(--bg2)" }}>
+
       <Link
         href={user ? "/library" : "/"}
-        className="text-xl sm:text-2xl font-bold tracking-widest uppercase text-white hover:text-white/80 transition-colors"
+        className="font-serif text-2xl tracking-tight hover:opacity-70 transition-opacity"
+        style={{ color: "var(--t1)", fontFamily: "var(--font-serif, serif)" }}
       >
-        Digglist
+        Digglist<span style={{ color: "var(--amber)" }}>.</span>
       </Link>
 
       {!isAuthPage && (
-        <nav className="flex items-center gap-3 sm:gap-6">
+        <nav className="flex items-center gap-6">
           <Link
             href="/library"
-            className={`hidden sm:block text-sm transition-colors ${
-              onLibrary ? "text-white font-medium" : "text-white/50 hover:text-white"
-            }`}
+            className="text-sm transition-colors"
+            style={{ color: onLibrary ? "var(--t1)" : "var(--t3)" }}
           >
             Library
           </Link>
           <Link
-            href="/quick-add"
-            className="px-4 sm:px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
+            href="/crates"
+            className="text-sm transition-colors"
+            style={{ color: path === "/crates" ? "var(--t1)" : "var(--t3)" }}
           >
-            + Add Track
+            Crates
+          </Link>
+          <Link
+            href="/quick-add"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ background: "var(--t1)", color: "var(--bg)" }}
+          >
+            + Add
           </Link>
           {user && (
             <button
               type="button"
               onClick={handleLogout}
-              className="text-sm text-white/40 hover:text-white transition-colors"
+              className="text-sm transition-colors"
+              style={{ color: "var(--t3)" }}
             >
-              Logout
+              Sign out
             </button>
           )}
         </nav>

@@ -8,6 +8,7 @@ import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
+import BottomNav from "@/app/components/BottomNav";
 
 export default function LibraryPage() {
   const user = useRequireAuth();
@@ -27,6 +28,12 @@ export default function LibraryPage() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [user]);
+
+  /* Pre-set status filter from URL param (?ids=1) */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ids") === "1") setStatus("IDs Needed");
+  }, []);
 
   if (!user) return <PageLoader />;
 
@@ -59,10 +66,10 @@ export default function LibraryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)", color: "var(--t1)" }}>
       <Header />
 
-      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12">
+      <section className="flex flex-col items-center flex-1 px-4 py-10 sm:py-12 pb-28 sm:pb-12">
         <div className="w-full max-w-2xl">
 
           <div className="flex items-center justify-between mb-6">
@@ -149,6 +156,7 @@ export default function LibraryPage() {
           )}
         </div>
       </section>
+      <BottomNav />
     </main>
   );
 }

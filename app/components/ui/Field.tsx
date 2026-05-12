@@ -1,5 +1,13 @@
-export const inputClass =
-  "w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-white/30 transition-colors";
+/* Shared input style — uses design tokens from globals.css */
+export const inputClass = [
+  "w-full rounded-xl px-4 py-3 text-sm",
+  "focus:outline-none transition-colors",
+  "placeholder:text-[var(--t3)]",
+  "text-[var(--t1)]",
+  "bg-[var(--bg3)]",
+  "border border-[var(--rule2)]",
+  "focus:border-[var(--rule3)]",
+].join(" ");
 
 export function Field({
   label,
@@ -14,9 +22,10 @@ export function Field({
 }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
-      <label className="text-xs font-semibold uppercase tracking-widest text-white/40">
+      <label className="text-[10px] font-medium tracking-[0.12em] uppercase"
+        style={{ color: "var(--t3)" }}>
         {label}
-        {required && <span className="text-white/60 ml-0.5">*</span>}
+        {required && <span className="ml-0.5" style={{ color: "var(--t2)" }}>*</span>}
       </label>
       {children}
     </div>

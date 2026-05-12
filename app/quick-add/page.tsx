@@ -44,6 +44,15 @@ export default function QuickAddPage() {
     return () => clearTimeout(t);
   }, [user]);
 
+  // Pre-set status from URL param (?status=IDs+Needed)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const preset = params.get("status");
+    if (preset && (STATUSES as readonly string[]).includes(preset)) {
+      setStatus(preset);
+    }
+  }, []);
+
   if (!user) return <PageLoader />;
 
   const urlValid    = URL_RE.test(url.trim());

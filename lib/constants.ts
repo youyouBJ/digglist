@@ -20,11 +20,11 @@ export const STATUSES = [
 export type Status = (typeof STATUSES)[number];
 
 export const STATUS_COLORS: Record<Status, string> = {
-  "To listen":  "bg-blue-500/15 text-blue-300",
-  "To buy":     "bg-yellow-500/15 text-yellow-300",
-  "To play":    "bg-green-500/15 text-green-300",
-  "Inspiration":"bg-purple-500/15 text-purple-300",
-  "IDs Needed": "bg-orange-500/15 text-orange-300",
+  "To listen":  "bg-blue-500/10 text-blue-300",
+  "To buy":     "bg-yellow-500/10 text-yellow-300",
+  "To play":    "bg-green-500/10 text-green-300",
+  "Inspiration":"bg-purple-500/10 text-purple-300",
+  "IDs Needed": "bg-[var(--amber-soft)] text-[var(--amber)] border border-[var(--amber-rule)]",
 };
 
 export const STATUS_COLOR_DEFAULT = "bg-white/10 text-white/50";

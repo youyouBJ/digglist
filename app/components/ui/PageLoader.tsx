@@ -2,10 +2,10 @@ import Header from "@/app/components/Header";
 
 export function PageLoader() {
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       <Header />
       <div className="flex items-center justify-center flex-1">
-        <p className="text-white/30 text-sm">Loading…</p>
+        <span className="text-sm" style={{ color: "var(--t3)" }}>Loading…</span>
       </div>
     </main>
   );

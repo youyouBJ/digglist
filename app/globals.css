@@ -1,23 +1,87 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+
 :root {
-  --background: #0d0d0d;
-  --foreground: #f0f0f0;
+  /* Surfaces — layered warm-cool charcoal */
+  --bg:  #0f0f11;
+  --bg2: #141416;
+  --bg3: #1a1a1d;
+  --bg4: #222226;
+  --bg5: #2b2b30;
+
+  /* Type — warm off-white through 4 grays */
+  --t1: #f0efec;
+  --t2: #9a9996;
+  --t3: #585754;
+  --t4: #3a3936;
+
+  /* Amber — IDs needed */
+  --amber:        #c9a24a;
+  --amber-bright: #e6bd66;
+  --amber-soft:   rgba(201, 162, 74, 0.07);
+  --amber-rule:   rgba(201, 162, 74, 0.20);
+  --amber-fill:   rgba(201, 162, 74, 0.14);
+
+  /* Teal — set context */
+  --teal:      #3d9e87;
+  --teal-soft: rgba(61, 158, 135, 0.10);
+  --teal-rule: rgba(61, 158, 135, 0.22);
+
+  /* Crate accent hues */
+  --pink:   #b5607a;
+  --slate:  #5272a0;
+  --purple: #7a5fc0;
+  --rust:   #b4694a;
+
+  /* Hairline rules */
+  --rule:  rgba(255, 255, 255, 0.055);
+  --rule2: rgba(255, 255, 255, 0.095);
+  --rule3: rgba(255, 255, 255, 0.14);
+
+  /* Legacy aliases (used by existing Tailwind classes via @theme) */
+  --background: var(--bg);
+  --foreground: var(--t1);
 }
+
+/* ─── Tailwind v4 theme registration ────────────────────────────────────── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Legacy map (keeps bg-background, text-foreground working) */
+  --color-background: var(--bg);
+  --color-foreground: var(--t1);
+
+  /* Surface utilities: bg-dg-bg, bg-dg-bg2 … */
+  --color-dg-bg:  var(--bg);
+  --color-dg-bg2: var(--bg2);
+  --color-dg-bg3: var(--bg3);
+  --color-dg-bg4: var(--bg4);
+  --color-dg-bg5: var(--bg5);
+
+  /* Text utilities: text-dg-t1 … */
+  --color-dg-t1: var(--t1);
+  --color-dg-t2: var(--t2);
+  --color-dg-t3: var(--t3);
+  --color-dg-t4: var(--t4);
+
+  /* Signal */
+  --color-dg-amber: var(--amber);
+  --color-dg-teal:  var(--teal);
+  --color-dg-pink:  var(--pink);
+  --color-dg-slate: var(--slate);
+
+  /* Typography */
+  --font-sans:  var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, "Iowan Old Style", "Apple Garamond", Georgia, serif;
+  --font-mono:  var(--font-jb-mono), var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-/* ─── iOS / WebKit baseline ─────────────────────────────────────── */
+/* ─── iOS / WebKit baseline ──────────────────────────────────────────────── */
 
-/* Remove tap flash on interactive elements */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Remove native input chrome on iOS */
 input,
 button,
 select,
@@ -25,12 +89,23 @@ textarea {
   -webkit-appearance: none;
 }
 
+/* ─── Base styles ────────────────────────────────────────────────────────── */
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--font-sans, ui-sans-serif);
+  font-feature-settings: "ss01", "ss02";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ─── Animation keyframes ────────────────────────────────────────── */
+/* Hide scrollbars globally (touch-first) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Animation keyframes ────────────────────────────────────────────────── */
 
 @keyframes fade-in {
   from { opacity: 0; }
@@ -47,7 +122,12 @@ body {
   to   { opacity: 1; transform: translateY(0);    }
 }
 
-/* ─── Animation utilities ────────────────────────────────────────── */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ─── Animation utilities ────────────────────────────────────────────────── */
 
 .animate-fade-in {
   animation: fade-in 0.15s ease-out both;
@@ -59,4 +139,8 @@ body {
 
 .animate-slide-up {
   animation: slide-up 0.25s ease-out both;
+}
+
+.animate-sheet-up {
+  animation: sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
 }

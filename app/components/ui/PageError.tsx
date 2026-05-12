@@ -11,14 +11,15 @@ export function PageError({
   backLabel?: string;
 }) {
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white flex flex-col">
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       <Header />
       <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center px-4">
-        <p className="text-white/40">{message}</p>
+        <p className="text-sm" style={{ color: "var(--t3)" }}>{message}</p>
         {backHref && (
           <Link
             href={backHref}
-            className="text-sm text-white hover:text-white/70 transition-colors underline underline-offset-2"
+            className="text-sm underline underline-offset-2 transition-colors"
+            style={{ color: "var(--t2)" }}
           >
             {backLabel}
           </Link>
