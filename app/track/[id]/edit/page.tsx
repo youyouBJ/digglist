@@ -9,7 +9,7 @@ import {
   type Crate,
 } from "@/lib/supabase-crates";
 import { PLATFORMS, EMPTY_TRACK_FORM } from "@/lib/constants";
-import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
+import { extractTimestampFromUrl, formatTimestamp, parseManualTimestamp } from "@/lib/timestamp";
 import type { TrackFormState } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
@@ -24,6 +24,7 @@ export default function EditTrackPage() {
   const [track, setTrack]                     = useState<Track | null | undefined>(undefined);
   const [form, setForm]                       = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [storedTimestamp, setStoredTimestamp] = useState<number | null>(null);
+  const [tsInput, setTsInput]               = useState("");
   const [rating, setRating]                   = useState<number | null>(null);
   const [saving, setSaving]                   = useState(false);
   const [error, setError]                     = useState<string | null>(null);
@@ -41,6 +42,7 @@ export default function EditTrackPage() {
         setTrack(t);
         setRating(t.rating);
         setStoredTimestamp(t.sourceTimestamp);
+        if (t.sourceTimestamp) setTsInput(formatTimestamp(t.sourceTimestamp));
         setForm({
           title:    t.title,
           artist:   t.artist,
@@ -70,7 +72,7 @@ export default function EditTrackPage() {
     setSaving(true);
     setError(null);
     try {
-      const finalTimestamp = extractTimestampFromUrl(form.url) ?? storedTimestamp;
+      const finalTimestamp = parseManualTimestamp(tsInput) ?? extractTimestampFromUrl(form.url) ?? storedTimestamp;
       await updateTrack(id, {
         title:           form.title,
         artist:          form.artist,
@@ -106,8 +108,7 @@ export default function EditTrackPage() {
     );
   }
 
-  const detectedTs = extractTimestampFromUrl(form.url) ?? storedTimestamp;
-  const isIds      = track.recordType === "id_needed";
+  const isIds = track.recordType === "id_needed";
 
   return (
     <main
@@ -208,7 +209,7 @@ export default function EditTrackPage() {
               {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </FormRow>
-          <FormRow label="URL" last={detectedTs === null}>
+          <FormRow label="URL">
             <input
               type="url"
               placeholder="https://…"
@@ -217,20 +218,17 @@ export default function EditTrackPage() {
               className="form-input"
             />
           </FormRow>
-          {detectedTs !== null && (
-            <FormRow label="Timestamp" last readonly>
-              <span
-                className="text-[15px] font-medium"
-                style={{
-                  color:               "var(--amber)",
-                  fontFamily:          "var(--font-jb-mono, monospace)",
-                  fontFeatureSettings: '"tnum"',
-                }}
-              >
-                {formatTimestamp(detectedTs)}
-              </span>
-            </FormRow>
-          )}
+          <FormRow label="Timestamp" last>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="12:43 ou 1:12:43"
+              value={tsInput}
+              onChange={(e) => setTsInput(e.target.value)}
+              className="form-input"
+              style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
+            />
+          </FormRow>
         </FormSection>
 
         {/* ── Section: Tags ────────────────────────────────────────── */}

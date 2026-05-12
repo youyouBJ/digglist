@@ -202,6 +202,11 @@ export default function TrackDetailPage() {
         </div>
       )}
 
+      {/* ── Embed ──────────────────────────────────────────────────── */}
+      {track.sourceUrl && !isIds && (
+        <TrackEmbed url={track.sourceUrl} timestamp={track.sourceTimestamp} />
+      )}
+
       {/* ── Detail sections ────────────────────────────────────────── */}
       <div style={{ borderTop: "0.5px solid var(--rule)" }}>
 
@@ -498,6 +503,57 @@ export default function TrackDetailPage() {
       <BottomNav />
     </main>
   );
+}
+
+/* ─── Embed ──────────────────────────────────────────────────────────────── */
+
+function getYouTubeEmbedId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m?.[1] ?? null;
+}
+
+function getSoundCloudEmbedUrl(url: string): string | null {
+  if (!/soundcloud\.com/.test(url)) return null;
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%233d9e87&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false`;
+}
+
+function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null }) {
+  const ytId = getYouTubeEmbedId(url);
+  const scUrl = getSoundCloudEmbedUrl(url);
+
+  if (ytId) {
+    const src = `https://www.youtube.com/embed/${ytId}${timestamp ? `?start=${timestamp}` : ""}`;
+    return (
+      <div className="mx-5 sm:mx-8 mb-4 rounded-[10px] overflow-hidden"
+        style={{ border: "0.5px solid var(--rule2)", aspectRatio: "16/9" }}>
+        <iframe
+          src={src}
+          title="YouTube player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+          style={{ border: "none" }}
+        />
+      </div>
+    );
+  }
+
+  if (scUrl) {
+    return (
+      <div className="mx-5 sm:mx-8 mb-4 rounded-[10px] overflow-hidden"
+        style={{ border: "0.5px solid var(--rule2)" }}>
+        <iframe
+          src={scUrl}
+          title="SoundCloud player"
+          allow="autoplay"
+          className="w-full"
+          style={{ border: "none", height: 120 }}
+        />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 /* ─── Detail thumb ───────────────────────────────────────────────────────── */

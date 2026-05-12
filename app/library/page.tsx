@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getCrates, getCrateTrackIds, type CrateWithCount } from "@/lib/supabase-crates";
-import { PLATFORMS, STATUSES } from "@/lib/constants";
+import { PLATFORMS } from "@/lib/constants";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
@@ -35,7 +35,6 @@ export default function LibraryPage() {
   const [error, setError]               = useState<string | null>(null);
   const [search, setSearch]             = useState("");
   const [platformFilter, setPlatform]   = useState("");
-  const [statusFilter, setStatus]       = useState("");
   const [confirmId, setConfirmId]       = useState<string | null>(null);
 
   /* Crates */
@@ -64,12 +63,11 @@ export default function LibraryPage() {
   const idsCount = allTracks.filter((t) => t.recordType === "id_needed").length;
   const tracks   = allTracks.filter((t) => t.recordType !== "id_needed");
 
-  const hasFilter = search !== "" || platformFilter !== "" || statusFilter !== "" || crateFilter !== "";
+  const hasFilter = search !== "" || platformFilter !== "" || crateFilter !== "";
 
   const filtered = tracks.filter((t) => {
     if (crateFilter && crateTrackIds && !crateTrackIds.has(t.id)) return false;
-    if (platformFilter && t.sourcePlatform !== platformFilter)     return false;
-    if (statusFilter   && t.status         !== statusFilter)       return false;
+    if (platformFilter && t.sourcePlatform !== platformFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -183,19 +181,9 @@ export default function LibraryPage() {
 
             <FilterPill
               label="All"
-              active={!statusFilter && !platformFilter}
-              onClick={() => { setStatus(""); setPlatform(""); }}
+              active={!platformFilter && !crateFilter}
+              onClick={() => { setPlatform(""); setCrateFilter(""); }}
             />
-
-            {/* Status pills — IDs Needed excluded (those live on /ids) */}
-            {STATUSES.filter((s) => s !== "IDs Needed").map((s) => (
-              <FilterPill
-                key={s}
-                label={s}
-                active={statusFilter === s}
-                onClick={() => setStatus(statusFilter === s ? "" : s)}
-              />
-            ))}
 
             {/* Platform filter */}
             <select
@@ -239,7 +227,7 @@ export default function LibraryPage() {
             {hasFilter && (
               <button
                 type="button"
-                onClick={() => { setSearch(""); setPlatform(""); setStatus(""); setCrateFilter(""); }}
+                onClick={() => { setSearch(""); setPlatform(""); setCrateFilter(""); }}
                 className="shrink-0 text-[11px] underline underline-offset-2"
                 style={{ color: "var(--t3)" }}
               >

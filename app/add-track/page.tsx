@@ -11,7 +11,7 @@ import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
-import { extractTimestampFromUrl, formatTimestamp } from "@/lib/timestamp";
+import { extractTimestampFromUrl, formatTimestamp, parseManualTimestamp } from "@/lib/timestamp";
 
 export default function AddTrackPage() {
   const user = useRequireAuth();
@@ -25,6 +25,7 @@ export default function AddTrackPage() {
   const [fetchPhase, setFetchPhase]     = useState<"idle" | "success" | "error">("idle");
   const [fetchMsg, setFetchMsg]         = useState("");
   const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
+  const [tsInput, setTsInput]           = useState("");
 
   const [rating, setRating]                     = useState<number | null>(null);
   const [allCrates, setAllCrates]               = useState<Crate[]>([]);
@@ -113,7 +114,7 @@ export default function AddTrackPage() {
         mood:            form.mood,
         status:          form.status,
         notes:           form.notes,
-        sourceTimestamp: sourceTimestamp ?? extractTimestampFromUrl(form.url),
+        sourceTimestamp: finalTs,
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       setSaved(true);
@@ -130,12 +131,15 @@ export default function AddTrackPage() {
     setFetchPhase("idle");
     setFetchMsg("");
     setTimestamp(null);
+    setTsInput("");
     setError(null);
     setSelectedCrateIds([]);
     setRating(null);
   }
 
-  const tsFromUrl = sourceTimestamp ?? extractTimestampFromUrl(form.url);
+  const tsFromUrl    = sourceTimestamp ?? extractTimestampFromUrl(form.url);
+  const tsFromInput  = parseManualTimestamp(tsInput);
+  const finalTs      = tsFromInput ?? tsFromUrl;
 
   return (
     <main className="min-h-screen flex flex-col pb-24 sm:pb-6"
@@ -274,14 +278,30 @@ export default function AddTrackPage() {
                 </p>
               )}
 
-              {tsFromUrl !== null && (
+              {tsFromUrl !== null && !tsFromInput && (
                 <p className="mt-1 text-[12px] font-medium"
                   style={{ color: "var(--amber)", fontFamily: "var(--font-jb-mono, monospace)", fontFeatureSettings: '"tnum"' }}>
-                  ⏱ {formatTimestamp(tsFromUrl)}
+                  ⏱ {formatTimestamp(tsFromUrl)} (auto)
                 </p>
               )}
             </div>
 
+            <FormRow label="Timestamp">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="12:43 ou 1:12:43"
+                value={tsInput}
+                onChange={(e) => setTsInput(e.target.value)}
+                className="form-input"
+                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
+              />
+              {tsFromInput !== null && (
+                <p className="text-[11px] mt-1" style={{ color: "var(--amber)" }}>
+                  ⏱ {formatTimestamp(tsFromInput)}
+                </p>
+              )}
+            </FormRow>
             <FormRow label="Platform" last>
               <select
                 value={form.platform}

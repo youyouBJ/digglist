@@ -1,4 +1,30 @@
 /**
+ * Parses a manually-typed timestamp string into seconds.
+ * Accepts: "12:43", "1:12:43", "90" (seconds), "1h24m30s"
+ * Returns null if unparseable or zero.
+ */
+export function parseManualTimestamp(raw: string): number | null {
+  const s = raw.trim();
+  if (!s) return null;
+  // Pure integer (seconds)
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10);
+    return n > 0 ? n : null;
+  }
+  // Colon-separated: MM:SS or H:MM:SS
+  if (/^[\d:]+$/.test(s)) return parseColonTime(s);
+  // YouTube-style: 1h24m30s
+  const m = s.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (m && s !== "") {
+    const total = (parseInt(m[1] ?? "0", 10)) * 3600
+                + (parseInt(m[2] ?? "0", 10)) * 60
+                + (parseInt(m[3] ?? "0", 10));
+    return total > 0 ? total : null;
+  }
+  return null;
+}
+
+/**
  * Extracts a timestamp (in seconds) from a YouTube or SoundCloud URL.
  *
  * YouTube:    ?t=5070 | ?t=1h24m30s | ?t=84m30s | ?t=30s

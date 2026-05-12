@@ -147,11 +147,14 @@ async function fetchTikTok(url: string): Promise<Meta | null> {
     const data = await res.json() as {
       title?: string; author_name?: string; thumbnail_url?: string;
     };
+    const caption = data.title ?? "";
+    const { title: splitTitle, artist: splitArtist } = splitArtistTitle(caption);
+    const hasArtistTitle = splitTitle && splitArtist;
     return {
-      title:    "",
-      artist:   data.author_name ?? "",
+      title:    hasArtistTitle ? splitTitle : "",
+      artist:   hasArtistTitle ? splitArtist : (data.author_name ?? ""),
       imageUrl: data.thumbnail_url ?? "",
-      notes:    data.title ?? "",
+      notes:    hasArtistTitle ? "" : caption,
     };
   } catch {
     return null;
