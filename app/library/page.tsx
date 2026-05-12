@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getCrates, getCrateTrackIds, type CrateWithCount } from "@/lib/supabase-crates";
 import { PLATFORMS, STATUSES } from "@/lib/constants";
@@ -28,7 +29,17 @@ function relativeDate(dateStr: string): string {
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 
 export default function LibraryPage() {
-  const user = useRequireAuth();
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <LibraryPageInner />
+    </Suspense>
+  );
+}
+
+function LibraryPageInner() {
+  const user         = useRequireAuth();
+  const searchParams = useSearchParams();
+  const statusFromUrl = useRef(false);
 
   const [tracks, setTracks]           = useState<Track[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -64,11 +75,17 @@ export default function LibraryPage() {
       .finally(() => setLoadingCrateFilter(false));
   }, [crateFilter]);
 
-  /* Pre-set status filter from URL param (?ids=1) */
+  /* Sync status filter with ?ids=1 URL param — reactive to soft navigation */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("ids") === "1") setStatus("IDs Needed");
-  }, []);
+    const hasIds = searchParams.get("ids") === "1";
+    if (hasIds) {
+      setStatus("IDs Needed");
+      statusFromUrl.current = true;
+    } else if (statusFromUrl.current) {
+      setStatus("");
+      statusFromUrl.current = false;
+    }
+  }, [searchParams]);
 
   if (!user) return <PageLoader />;
 

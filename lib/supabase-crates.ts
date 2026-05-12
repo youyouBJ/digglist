@@ -73,9 +73,13 @@ export async function createCrate(input: {
   parentId?: string | null;
   position?: number;
 }): Promise<Crate> {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Not authenticated.");
+
   const { data, error } = await supabase
     .from("crates")
     .insert({
+      user_id:     user.id,
       name:        input.name,
       description: input.description ?? "",
       color:       input.color ?? "#3d9e87",

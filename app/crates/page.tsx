@@ -9,13 +9,6 @@ import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 
-function hexToRgb(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `${r},${g},${b}`;
-}
-
 export default function CratesPage() {
   const user   = useRequireAuth();
   const router = useRouter();
@@ -49,8 +42,8 @@ export default function CratesPage() {
 
   if (!user) return <PageLoader />;
 
-  const topLevel   = crates.filter((c) => !c.parentId);
-  const subCrates  = crates.filter((c) => c.parentId);
+  const topLevel  = crates.filter((c) => !c.parentId);
+  const subCrates = crates.filter((c) =>  c.parentId);
   const subMap: Record<string, CrateWithCount[]> = {};
   subCrates.forEach((c) => {
     if (!subMap[c.parentId!]) subMap[c.parentId!] = [];
@@ -65,32 +58,26 @@ export default function CratesPage() {
       <Header />
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <div className="px-5 sm:px-8 pt-5 pb-5 sm:pt-8">
-        <p className="text-[11px] tracking-[0.10em] uppercase mb-1"
-          style={{ color: "var(--t3)" }}>
-          Your library
-        </p>
-        <div className="flex items-start justify-between">
+      <div className="px-5 sm:px-8 pt-5 pb-4 sm:pt-8 flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.10em] uppercase mb-1"
+            style={{ color: "var(--t3)" }}>Your library</p>
           <h1 className="text-[30px] font-medium tracking-[-0.04em] leading-none"
-            style={{ color: "var(--t1)" }}>
-            Crates
-          </h1>
-          <Link
-            href="/crates/new"
-            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors mt-1"
-            style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1, marginTop: -1 }}>+</span>
-            New crate
-          </Link>
+            style={{ color: "var(--t1)" }}>Crates</h1>
+          {!loading && (
+            <p className="text-[12px] mt-2" style={{ color: "var(--t3)" }}>
+              {topLevel.length === 0 ? "No crates yet" : `${topLevel.length} ${topLevel.length === 1 ? "crate" : "crates"}`}
+            </p>
+          )}
         </div>
-        {!loading && (
-          <p className="text-[12px] mt-2" style={{ color: "var(--t3)" }}>
-            {topLevel.length === 0
-              ? "No crates yet"
-              : `${topLevel.length} ${topLevel.length === 1 ? "crate" : "crates"}`}
-          </p>
-        )}
+        <Link
+          href="/crates/new"
+          className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[12px] font-medium mt-2"
+          style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1, marginTop: -1 }}>+</span>
+          New crate
+        </Link>
       </div>
 
       {error && (
@@ -104,44 +91,47 @@ export default function CratesPage() {
       ) : (
         <div style={{ borderTop: "0.5px solid var(--rule)" }}>
 
-          {/* ── IDs Needed — pinned virtual crate ───────────────── */}
+          {/* ── IDs Needed — pinned virtual crate ────────────────── */}
           <Link
             href="/library?ids=1"
-            className="flex items-center gap-4 px-5 sm:px-8 py-4"
+            className="flex items-center gap-4 px-5 sm:px-8 py-[14px] transition-opacity active:opacity-70"
             style={{ borderBottom: "0.5px solid var(--rule)", background: "var(--amber-soft)" }}
           >
             <div
-              className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{
-                background: "rgba(201,162,74,0.14)",
-                border: "0.5px solid var(--amber-rule)",
-              }}
+              className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0"
+              style={{ background: "rgba(201,162,74,0.18)", border: "0.5px solid var(--amber-rule)" }}
             >
-              <BookmarkFillIcon />
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+                style={{ color: "var(--amber)" }}>
+                <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-medium mb-[2px]" style={{ color: "var(--amber)" }}>
+              <p className="text-[14px] font-medium" style={{ color: "var(--amber)" }}>
                 IDs Needed
               </p>
-              <p className="text-[11px]" style={{ color: "rgba(201,162,74,0.55)" }}>
+              <p className="text-[11px] mt-[2px]" style={{ color: "rgba(201,162,74,0.55)" }}>
                 Tracks waiting to be identified
               </p>
             </div>
-            <ChevronRight style={{ color: "var(--amber)" }} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--amber)", opacity: 0.6 }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+            </svg>
           </Link>
 
-          {/* ── Crates grid ─────────────────────────────────────── */}
+          {/* ── Crates grid ──────────────────────────────────────── */}
           {topLevel.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="px-5 sm:px-8 py-5 grid grid-cols-2 gap-3">
+            <div className="px-4 sm:px-8 pt-4 pb-4 grid grid-cols-2 gap-3">
               {topLevel.map((crate) => (
                 <CrateCard
                   key={crate.id}
                   crate={crate}
                   subCrates={subMap[crate.id] ?? []}
                   confirming={confirmId === crate.id}
-                  deleting={deleting}
+                  deleting={deleting && confirmId === crate.id}
                   onNavigate={() => router.push(`/crates/${crate.id}`)}
                   onEdit={(e) => { e.stopPropagation(); router.push(`/crates/${crate.id}/edit`); }}
                   onAskDelete={(e) => { e.stopPropagation(); setConfirmId(crate.id); }}
@@ -175,26 +165,43 @@ function CrateCard({
   onCancelDelete: (e: React.MouseEvent) => void;
   onConfirmDelete: (e: React.MouseEvent) => void;
 }) {
-  const rgb = hexToRgb(crate.color);
-
   return (
     <div
       onClick={onNavigate}
-      className="flex flex-col rounded-[14px] overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
+      className="flex flex-col cursor-pointer rounded-[12px] overflow-hidden transition-opacity active:opacity-70"
       style={{
-        background: `rgba(${rgb},0.06)`,
-        border:     `0.5px solid rgba(${rgb},0.22)`,
+        background:  "var(--bg2)",
+        border:      "0.5px solid var(--rule2)",
+        borderLeft:  `3px solid ${crate.color}`,
+        minHeight:   148,
       }}
     >
-      {/* Color accent strip */}
-      <div style={{ height: 3, background: crate.color, opacity: 0.75 }} />
+      <div className="flex-1 flex flex-col p-4 gap-1">
+        {/* Color dot + name */}
+        <p className="text-[14px] font-medium leading-[1.25] break-words"
+          style={{ color: "var(--t1)" }}>
+          {crate.name}
+        </p>
 
-      {/* Main content */}
-      <div className="p-4 flex-1 flex flex-col gap-3">
-        {/* Track count */}
-        <div className="flex items-baseline gap-1.5">
+        {/* Description */}
+        {crate.description && (
+          <p className="text-[11px] leading-[1.4] line-clamp-2 mt-[1px]"
+            style={{ color: "var(--t3)" }}>
+            {crate.description}
+          </p>
+        )}
+
+        {/* Sub-crate indicator */}
+        {subCrates.length > 0 && (
+          <p className="text-[10px] mt-1" style={{ color: "var(--t4)" }}>
+            {subCrates.length} sub-{subCrates.length === 1 ? "crate" : "crates"}
+          </p>
+        )}
+
+        {/* Spacer + count */}
+        <div className="mt-auto pt-3 flex items-baseline gap-1">
           <span
-            className="text-[30px] font-medium tracking-[-0.04em] leading-none"
+            className="text-[26px] font-medium tracking-[-0.04em] leading-none"
             style={{ color: crate.color, fontFeatureSettings: '"tnum"' }}
           >
             {crate.trackCount}
@@ -203,66 +210,33 @@ function CrateCard({
             {crate.trackCount === 1 ? "track" : "tracks"}
           </span>
         </div>
-
-        {/* Name + description */}
-        <div className="mt-auto">
-          <p className="text-[13px] font-medium leading-[1.2] truncate"
-            style={{ color: "var(--t1)" }}>
-            {crate.name}
-          </p>
-          {crate.description && (
-            <p className="text-[11px] mt-0.5 truncate" style={{ color: "var(--t3)" }}>
-              {crate.description}
-            </p>
-          )}
-          {subCrates.length > 0 && (
-            <p className="text-[10px] mt-1" style={{ color: "var(--t4)" }}>
-              {subCrates.length} sub-{subCrates.length === 1 ? "crate" : "crates"}
-            </p>
-          )}
-        </div>
       </div>
 
       {/* Actions */}
       <div
         className="px-4 py-2 flex items-center justify-between"
-        style={{ borderTop: `0.5px solid rgba(${rgb},0.14)` }}
+        style={{ borderTop: "0.5px solid var(--rule)" }}
       >
         {confirming ? (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={onConfirmDelete}
-              disabled={deleting}
-              className="text-[11px] text-red-400 font-medium disabled:opacity-50"
-            >
+            <button type="button" onClick={onConfirmDelete} disabled={deleting}
+              className="text-[11px] text-red-400 font-medium disabled:opacity-50">
               {deleting ? "…" : "Delete"}
             </button>
-            <button
-              type="button"
-              onClick={onCancelDelete}
-              className="text-[11px]"
-              style={{ color: "var(--t4)" }}
-            >
+            <button type="button" onClick={onCancelDelete}
+              className="text-[11px]" style={{ color: "var(--t4)" }}>
               Cancel
             </button>
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={onAskDelete}
-              className="text-[11px] transition-colors"
-              style={{ color: "var(--t4)" }}
-            >
+            <button type="button" onClick={onAskDelete}
+              className="text-[11px]" style={{ color: "var(--t4)" }}>
               Delete
             </button>
-            <button
-              type="button"
-              onClick={onEdit}
-              className="text-[11px] font-medium transition-colors"
-              style={{ color: `rgba(${rgb},0.8)` }}
-            >
+            <button type="button" onClick={onEdit}
+              className="text-[11px] font-medium"
+              style={{ color: crate.color }}>
               Edit →
             </button>
           </>
@@ -277,38 +251,18 @@ function CrateCard({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-20 px-8 text-center">
-      <div style={{ color: "var(--t4)", fontSize: 36 }}>▤</div>
+      <div className="text-[40px]" style={{ color: "var(--t4)" }}>▤</div>
       <p className="text-[14px]" style={{ color: "var(--t3)" }}>No crates yet.</p>
       <p className="text-[12px] max-w-xs leading-relaxed" style={{ color: "var(--t4)" }}>
         Create a crate to organise your digs — Jazz, Club tools, Sets…
       </p>
       <Link
         href="/crates/new"
-        className="mt-1 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-colors"
+        className="mt-1 px-5 py-2.5 rounded-xl text-[13px] font-medium"
         style={{ background: "var(--t1)", color: "var(--bg)" }}
       >
         + Create your first crate
       </Link>
     </div>
-  );
-}
-
-/* ─── Icons ──────────────────────────────────────────────────────────────── */
-
-function BookmarkFillIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
-      style={{ color: "var(--amber)" }}>
-      <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-    </svg>
-  );
-}
-
-function ChevronRight({ style }: { style?: React.CSSProperties }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={1.5} style={style}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-    </svg>
   );
 }

@@ -222,25 +222,7 @@ export default function BottomNav() {
                 </div>
                 <div className="flex-1">
                   <div className="text-[13px] font-medium" style={{ color: "var(--t1)" }}>Log from a set</div>
-                  <div className="text-[11px] mt-0.5" style={{ color: "var(--t3)" }}>Timestamp inside a mix</div>
-                </div>
-                <span style={{ color: "var(--t4)" }}><ChevronRight /></span>
-              </Link>
-
-              {/* Add from URL */}
-              <Link
-                href="/add-track"
-                onClick={() => setShowAdd(false)}
-                className="flex items-center gap-3 rounded-xl p-3.5"
-                style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "var(--bg4)", color: "var(--t2)" }}>
-                  <LinkIcon />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium" style={{ color: "var(--t1)" }}>Add from URL</div>
-                  <div className="text-[11px] mt-0.5" style={{ color: "var(--t3)" }}>Discogs, SoundCloud, YouTube</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: "var(--t3)" }}>Timestamp + source URL</div>
                 </div>
                 <span style={{ color: "var(--t4)" }}><ChevronRight /></span>
               </Link>

@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { extractTimestampFromUrl } from "@/lib/timestamp";
 
+/* ─── HTML helpers ───────────────────────────────────────────────────────── */
+
 function extractMeta(html: string, property: string): string {
   const patterns = [
-    `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"'<>]+)["']`,
-    `<meta[^>]+content=["']([^"'<>]+)["'][^>]+property=["']${property}["']`,
-    `<meta[^>]+name=["']${property}["'][^>]+content=["']([^"'<>]+)["']`,
-    `<meta[^>]+content=["']([^"'<>]+)["'][^>]+name=["']${property}["']`,
+    `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
+    `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
+    `<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`,
+    `<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${property}["']`,
   ];
   for (const p of patterns) {
     const m = html.match(new RegExp(p, "i"));
@@ -40,122 +42,209 @@ function detectPlatform(url: string): string {
   return "Other";
 }
 
+function splitArtistTitle(raw: string): { title: string; artist: string } {
+  const separators = [" - ", " – ", " — "];
+  for (const sep of separators) {
+    const idx = raw.indexOf(sep);
+    if (idx > 0) {
+      return { artist: raw.slice(0, idx).trim(), title: raw.slice(idx + sep.length).trim() };
+    }
+  }
+  return { title: raw.trim(), artist: "" };
+}
+
 function getYouTubeThumbnail(url: string): string {
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   return m ? `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg` : "";
 }
 
-function splitArtistTitle(raw: string): { title: string; artist: string } {
-  const sep = raw.indexOf(" - ");
-  if (sep !== -1) {
-    return { artist: raw.slice(0, sep).trim(), title: raw.slice(sep + 3).trim() };
-  }
-  return { title: raw.trim(), artist: "" };
-}
+const BROWSER_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 
-function cleanTitle(raw: string): string {
-  return raw
-    .replace(/ [-–|] YouTube$/, "")
-    .replace(/ - Free Listening on SoundCloud$/, "")
-    .replace(/ \| Discogs$/, "")
-    .replace(/ \| Free Music, Bio, Tours, Photos, Videos$/, "")
-    .trim();
-}
-
-export async function GET(request: NextRequest) {
-  // Authenticate request
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: { user } } = await supabaseServer.auth.getUser(token);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Validate target URL
-  const rawUrl = request.nextUrl.searchParams.get("url");
-  if (!rawUrl) {
-    return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
-  }
-
-  let parsed: URL;
+async function fetchHtml(url: string): Promise<string | null> {
   try {
-    parsed = new URL(rawUrl);
-  } catch {
-    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
-  }
-
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    return NextResponse.json({ error: "Only HTTP/HTTPS URLs are supported" }, { status: 400 });
-  }
-
-  const platform = detectPlatform(parsed.toString());
-
-  try {
-    const res = await fetch(parsed.toString(), {
+    const res = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml",
+        "User-Agent":      BROWSER_UA,
+        Accept:            "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9",
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(7000),
     });
+    if (!res.ok) return null;
 
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Could not fetch page (HTTP ${res.status})` },
-        { status: 422 }
-      );
-    }
-
-    // Limit HTML read to 500 KB to avoid loading huge pages into memory
     const reader = res.body?.getReader();
-    const MAX_BYTES = 500_000;
+    const MAX    = 500_000;
     const chunks: Uint8Array[] = [];
-    let total = 0;
-
+    let   total  = 0;
     if (reader) {
       while (true) {
         const { done, value } = await reader.read();
         if (done || !value) break;
         chunks.push(value);
         total += value.byteLength;
-        if (total >= MAX_BYTES) break;
+        if (total >= MAX) break;
       }
     }
-
-    const html = new TextDecoder().decode(
-      chunks.reduce((acc, chunk) => {
-        const merged = new Uint8Array(acc.length + chunk.length);
-        merged.set(acc);
-        merged.set(chunk, acc.length);
-        return merged;
+    return new TextDecoder().decode(
+      chunks.reduce((acc, c) => {
+        const m = new Uint8Array(acc.length + c.length);
+        m.set(acc); m.set(c, acc.length);
+        return m;
       }, new Uint8Array())
     );
-
-    const rawTitle = cleanTitle(extractMeta(html, "og:title") || extractTitle(html));
-    const { title, artist } = splitArtistTitle(rawTitle);
-
-    const imageUrl =
-      platform === "YouTube"
-        ? getYouTubeThumbnail(parsed.toString()) || extractMeta(html, "og:image")
-        : extractMeta(html, "og:image");
-
-    const timestamp = extractTimestampFromUrl(parsed.toString());
-    return NextResponse.json({ title, artist, platform, sourceUrl: parsed.toString(), imageUrl, timestamp });
-  } catch (err) {
-    const message =
-      err instanceof Error && err.name === "TimeoutError"
-        ? "Request timed out — the site took too long to respond."
-        : err instanceof Error
-        ? err.message
-        : "Failed to fetch metadata";
-
-    return NextResponse.json({ error: message }, { status: 422 });
+  } catch {
+    return null;
   }
+}
+
+/* ─── Platform-specific fetchers ─────────────────────────────────────────── */
+
+interface Meta { title: string; artist: string; imageUrl: string; notes?: string }
+
+async function fetchYouTube(url: string): Promise<Meta | null> {
+  try {
+    const oembed = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const res    = await fetch(oembed, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const data = await res.json() as { title?: string; author_name?: string; thumbnail_url?: string };
+    const { title, artist } = splitArtistTitle(data.title ?? "");
+    return {
+      title,
+      artist:   data.author_name ?? artist,
+      imageUrl: data.thumbnail_url ?? getYouTubeThumbnail(url),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchSoundCloud(url: string): Promise<Meta | null> {
+  try {
+    const oembed = `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const res    = await fetch(oembed, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const data = await res.json() as { title?: string; author_name?: string; thumbnail_url?: string };
+    const { title, artist } = splitArtistTitle(data.title ?? "");
+    return {
+      title,
+      artist:   data.author_name ?? artist,
+      imageUrl: data.thumbnail_url ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchTikTok(url: string): Promise<Meta | null> {
+  try {
+    const oembed = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+    const res    = await fetch(oembed, {
+      headers: { "User-Agent": BROWSER_UA },
+      signal:  AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as {
+      title?: string; author_name?: string; thumbnail_url?: string;
+    };
+    return {
+      title:    "",
+      artist:   data.author_name ?? "",
+      imageUrl: data.thumbnail_url ?? "",
+      notes:    data.title ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchInstagram(url: string): Promise<Meta | null> {
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const image       = extractMeta(html, "og:image");
+  const description = extractMeta(html, "og:description");
+  const siteName    = extractMeta(html, "og:site_name");
+  const author      = extractMeta(html, "article:author") || siteName;
+
+  return {
+    title:    "",
+    artist:   author,
+    imageUrl: image,
+    notes:    description,
+  };
+}
+
+async function fetchDiscogs(url: string): Promise<Meta | null> {
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const rawTitle = extractMeta(html, "og:title") || extractTitle(html);
+  const cleaned  = rawTitle.replace(/ \| Discogs$/, "").replace(/ - Discogs$/, "").trim();
+  const { title, artist } = splitArtistTitle(cleaned);
+  return {
+    title,
+    artist,
+    imageUrl: extractMeta(html, "og:image"),
+  };
+}
+
+async function fetchGeneric(url: string): Promise<Meta | null> {
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const rawTitle = extractMeta(html, "og:title") || extractTitle(html);
+  const { title, artist } = splitArtistTitle(rawTitle);
+  return {
+    title,
+    artist,
+    imageUrl: extractMeta(html, "og:image"),
+    notes:    extractMeta(html, "og:description"),
+  };
+}
+
+/* ─── Route ──────────────────────────────────────────────────────────────── */
+
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  const token      = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: { user } } = await supabaseServer.auth.getUser(token);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rawUrl = request.nextUrl.searchParams.get("url");
+  if (!rawUrl) return NextResponse.json({ error: "Missing url parameter" }, { status: 400 });
+
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); }
+  catch { return NextResponse.json({ error: "Invalid URL" }, { status: 400 }); }
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    return NextResponse.json({ error: "Only HTTP/HTTPS URLs are supported" }, { status: 400 });
+  }
+
+  const url      = parsed.toString();
+  const platform = detectPlatform(url);
+  const timestamp = extractTimestampFromUrl(url);
+
+  let meta: Meta | null = null;
+  try {
+    if (platform === "YouTube")   meta = await fetchYouTube(url);
+    else if (platform === "SoundCloud") meta = await fetchSoundCloud(url);
+    else if (platform === "TikTok")     meta = await fetchTikTok(url);
+    else if (platform === "Instagram")  meta = await fetchInstagram(url);
+    else if (platform === "Discogs")    meta = await fetchDiscogs(url);
+    else                                meta = await fetchGeneric(url);
+  } catch {
+    /* ignore — meta stays null */
+  }
+
+  /* Graceful fallback: return empty strings rather than an error */
+  return NextResponse.json({
+    title:     meta?.title    ?? "",
+    artist:    meta?.artist   ?? "",
+    notes:     meta?.notes    ?? "",
+    platform,
+    sourceUrl: url,
+    imageUrl:  meta?.imageUrl ?? "",
+    timestamp,
+  });
 }
