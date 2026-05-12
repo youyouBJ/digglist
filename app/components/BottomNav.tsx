@@ -191,7 +191,7 @@ export default function BottomNav() {
 
               {/* Log an ID needed */}
               <Link
-                href="/quick-add?status=IDs+Needed"
+                href="/ids/new"
                 onClick={() => setShowAdd(false)}
                 className="flex items-center gap-3 rounded-xl p-3.5"
                 style={{
@@ -204,28 +204,10 @@ export default function BottomNav() {
                   <BookmarkIcon active={false} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[13px] font-medium" style={{ color: "var(--amber)" }}>Log an ID needed</div>
+                  <div className="text-[13px] font-medium" style={{ color: "var(--amber)" }}>Log an ID</div>
                   <div className="text-[11px] mt-0.5" style={{ color: "rgba(201,162,74,0.55)" }}>Unknown track, where you heard it</div>
                 </div>
                 <span style={{ color: "var(--amber)" }}><ChevronRight /></span>
-              </Link>
-
-              {/* Log from a set */}
-              <Link
-                href="/quick-add"
-                onClick={() => setShowAdd(false)}
-                className="flex items-center gap-3 rounded-xl p-3.5"
-                style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "var(--bg4)", color: "var(--t2)" }}>
-                  <PlayIcon />
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium" style={{ color: "var(--t1)" }}>Log from a set</div>
-                  <div className="text-[11px] mt-0.5" style={{ color: "var(--t3)" }}>Timestamp + source URL</div>
-                </div>
-                <span style={{ color: "var(--t4)" }}><ChevronRight /></span>
               </Link>
             </div>
           </div>

@@ -347,7 +347,7 @@ function CrateTrackRow({
   onRemove: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const isIds = track.status === "IDs Needed";
+  const isIds = track.recordType === "id_needed";
 
   return (
     <li
@@ -435,7 +435,7 @@ function CrateThumb({ track }: { track: Track }) {
         style={{ width: 44, height: 44, borderRadius: 5, border: "0.5px solid var(--rule2)" }} />
     );
   }
-  if (track.status === "IDs Needed") {
+  if (track.recordType === "id_needed") {
     return (
       <div className="shrink-0 flex items-center justify-center text-[13px] font-medium"
         style={{ width: 44, height: 44, borderRadius: 5, background: "var(--amber-soft)", border: "0.5px solid var(--amber-rule)", color: "var(--amber)" }}>

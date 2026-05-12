@@ -18,9 +18,35 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable.** L'app est fonctionnelle end-to-end. Pas de build cassé, pas de bugs bloquants connus.
+**Beta stable. Phase 1 Stabilisation en cours.**
 
-### Ce qui est fait et fonctionnel
+Le test iPhone du 2026-05-12 a révélé plusieurs bugs P0 et demandes UX. La Phase 1 a été démarrée le même jour.
+
+---
+
+## Phase 1 — Stabilisation Beta (état)
+
+### Fait (2026-05-12)
+
+| Item | Fichier | État |
+|------|---------|------|
+| BUG-01 — Log an ID → `/ids/new` | `BottomNav.tsx` | ✅ |
+| BUG-SC-01 — SC embed `m.soundcloud.com` + height sets | `track/[id]/page.tsx` | ✅ |
+| BUG-STATUS-01 — `track.status` → `track.recordType` | `crates/[id]/page.tsx` | ✅ |
+| UX-ADD-01 — Champ `videoAuthor` dans Add Track | `add-track/page.tsx` | ✅ |
+| UX-NAV-01 — Supprimer "Log from a set" redondant | `BottomNav.tsx` | ✅ |
+| UX-05 — "Auteur vidéo" → "Video author" | `track/[id]/page.tsx`, `edit/page.tsx` | ✅ |
+
+### Restant Phase 1
+
+| Item | Fichier | Complexité |
+|------|---------|-----------|
+| BUG-03 — timestampEnd seul invisible | `track/[id]/page.tsx` l.266 | XS |
+| BUG-06 — Embed absent pour les IDs | `track/[id]/page.tsx` l.206 | XS |
+
+---
+
+## Ce qui est fait et fonctionnel
 
 | Fonctionnalité | État |
 |---------------|------|
@@ -32,40 +58,72 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 | Timestamps début + fin (saisie manuelle ou auto-URL) | ✅ |
 | Library — liste des tracks identifiés | ✅ |
 | IDs — page dédiée `/ids`, séparée de Library | ✅ |
-| Log an ID — form dédié `/ids/new` | ✅ |
+| Log an ID — form dédié `/ids/new` (BUG-01 corrigé) | ✅ |
 | Edit track — adaptatif (champs IDs si recordType=id_needed) | ✅ |
 | Crates — création, édition, sous-crates, 24 couleurs | ✅ |
-| Embed YouTube (avec timestamp) | ✅ |
-| Embed SoundCloud (widget, fallback link) | ✅ |
+| Embed YouTube (avec timestamp natif) | ✅ |
+| Embed SoundCloud (widget, hash strippé, fallback link) | ✅ |
 | Metadata auto-fetch (YouTube, SC, TikTok, IG, Discogs) | ✅ |
 | Navigation mobile Library ↔ IDs ↔ Crates sans refresh | ✅ |
 | Search dans Library et IDs | ✅ |
 | Filtre par crate dans Library et IDs | ✅ |
-
-### Ce qui N'est PAS encore fait
-
-- Rating non visible dans les rows Library/IDs (persisté mais non affiché en liste)
-- "Mark as found" flow dédié (actuellement ouvre le form edit)
-- Timestamp fin affiché seul dans detail (affiché seulement en segment début→fin)
-- Embed SoundCloud ne jump pas au timestamp (JS API non implémentée)
-- Pas de sort/tri dans Library
-- Pas de partage public
-- Pas d'import/export
+| BottomNav : Add sheet (2 options claires) + profil | ✅ |
+| SC embed normalisé (m.soundcloud.com, height sets) | ✅ |
+| crates/[id] : IDs détectés via `record_type` | ✅ |
+| Video author dans Add Track | ✅ |
 
 ---
 
-## Derniers commits importants
+## Bugs connus restants
 
+| ID | Sévérité | Description | Fichier | Complexité |
+|----|----------|-------------|---------|-----------|
+| BUG-02 | Moyenne | Back button Track Detail toujours vers /library même depuis /ids | `track/[id]/page.tsx` l.116 | S |
+| BUG-03 | Moyenne | timestampEnd affiché seulement si les deux timestamps sont définis | `track/[id]/page.tsx` l.266 | XS |
+| BUG-06 | Faible | Embed absent pour les IDs (condition `!isIds`) | `track/[id]/page.tsx` l.206 | XS |
+
+---
+
+## Ce qui N'est PAS encore fait
+
+- Rating non visible dans les rows Library/IDs (persisté mais non affiché en liste)
+- "Mark as found" flow dédié (actuellement ouvre le form edit complet)
+- Tri / sort dans Library et IDs
+- Crate pills sans count de tracks
+- Sets — onglet, page, flow dédié (Phase 2)
+- PWA manifest + Add to Home Screen (Phase 6)
+- Partage public (Phase 6)
+- Embed SoundCloud avec timestamp (Phase 2)
+- Player global persistant (Phase 6)
+- Support Spotify / Apple Music / Bandcamp (Phase 3)
+- IA metadata / résumé / BPM (Phase 4)
+
+---
+
+## Prochaine tâche recommandée
+
+### Phase 1 restante (15 min)
+
+**BUG-03** — Afficher timestampEnd seul :
+```tsx
+// app/track/[id]/page.tsx ligne 266 — changer la condition :
+{track.timestampEnd !== null && track.sourceTimestamp !== null && (  // ancien
+{track.timestampEnd !== null && (                                    // nouveau
 ```
-2313f4f  Beta bugfix: SoundCloud embed, status pills, timestamps, rating, crate colors
-045dad1  Edit form: full ID support (videoAuthor, trackIdHint, timestampEnd)
-1db5be9  Add /ids/new — dedicated Log an ID form + new DB fields
-11d5c13  Audit fixes: status pills, timestamp input, embeds, TikTok split
-2ed7ac2  Activate rating persistence in toRow (SQL column confirmed)
-953b535  Step 3: 5-star rating system + remove status pills from UI
-51e9fc1  feat: integrate record_type as authoritative Library/IDs separator
-b1f82b1  fix(nav): separate IDs into dedicated /ids route
+Si `sourceTimestamp` est null → afficher en row "End" au lieu de "Segment".
+
+**BUG-06** — Embed pour les IDs :
+```tsx
+// app/track/[id]/page.tsx ligne 206 — changer :
+{track.sourceUrl && !isIds && (    // ancien
+{track.sourceUrl && (             // nouveau
 ```
+
+### Phase 2 (prochain sprint)
+
+1. Remplacer "You" par "Sets" dans BottomNav (nécessite page `/sets`)
+2. Déplacer profil/logout dans le Header
+3. Flow "Log from a set" dédié
 
 ---
 
@@ -78,25 +136,13 @@ lib/supabase-crates.ts    → Crate CRUD, syncTrackCrates
 lib/timestamp.ts          → extractTimestampFromUrl, parseManualTimestamp, formatTimestamp
 lib/constants.ts          → PLATFORMS, CRATE_COLORS (24 couleurs), STATUSES (dépréciées UI)
 app/api/fetch-metadata/   → Route API : oEmbed + scraping, toujours retourne 200
+app/components/BottomNav.tsx → Nav mobile + sheet Add (2 options) — profil déplacé en Phase 2
+app/track/[id]/page.tsx   → Détail track + embed SC normalisé (VOIR BUG-02/03/06)
+app/library/page.tsx      → Library + TrackRow (rating manquant en liste)
+app/ids/page.tsx          → IDs + IdRow
+app/add-track/page.tsx    → Form complet avec videoAuthor
+app/crates/[id]/page.tsx  → Utilise correctement record_type (plus status)
 ```
-
----
-
-## Prochaine tâche recommandée
-
-### Option A — Rating dans les rows (impact UX immédiat)
-Ajouter un indicateur compact dans `TrackRow` (Library) et `IdRow` (IDs) si `track.rating !== null`.
-Exemple : petites étoiles amber `★★★★☆` ou juste `★ 4` en fin de ligne.
-Fichiers : `app/library/page.tsx`, `app/ids/page.tsx`.
-
-### Option B — "Mark as found" flow
-Actuellement dans `track/[id]/page.tsx`, le bouton "Mark as found" ouvre juste `/track/${id}/edit`.
-Créer un vrai flow : changer `recordType` → `"track"`, demander confirmation titre/artiste, rediriger vers Library.
-Nécessite une action dédiée dans `supabase-tracks.ts`.
-
-### Option C — Afficher timestamp fin seul
-Dans `track/[id]/page.tsx`, le segment `début → fin` s'affiche seulement si les deux sont définis.
-Afficher aussi `timestampEnd` seul si `sourceTimestamp` est null.
 
 ---
 
@@ -113,12 +159,17 @@ npm run build   # obligatoire — valide TypeScript strictement
 3. Mettre à jour `TrackRow`, `toTrack`, `toRow` dans `lib/supabase-tracks.ts`
 4. Mettre à jour tous les call sites de `createTrack` / `updateTrack` (TypeScript guide)
 
+### Règle documentation continue
+**Après chaque tâche importante** : mettre à jour ROADMAP.md (cocher les items faits), HANDOFF.md (état actuel + prochaine priorité). Le README.md uniquement si les fonctionnalités ou la stack changent.
+
 ### Pièges à éviter
 - **Ne jamais ré-ajouter des status pills** dans l'UI (To listen / To buy / To play / Inspiration)
 - **Ne jamais utiliser `?ids=1` comme URL param** — c'est l'ancienne approche bugguée
+- **Ne jamais utiliser `track.status === "IDs Needed"`** — utiliser `track.recordType === "id_needed"`
 - **Ne jamais supprimer la colonne `status`** en DB sans migration des données
 - **Toujours strip le hash `#t=...`** avant d'encoder une URL SoundCloud pour le widget
 - **Toujours passer `user_id` dans les INSERTs** (tracks, crates) — la RLS rejette sinon
+- **Ne jamais réintroduire `useSearchParams`** dans `/ids/page.tsx` — source du bug nav mobile original
 
 ### Style de code
 - Pas de commentaires sauf si le WHY est non-évident
@@ -142,6 +193,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 ## Documentation complémentaire
 
 - `README.md` — vision, stack, routes, fonctionnalités
-- `ROADMAP.md` — backlog, bugs connus, décisions produit, choses à éviter
+- `ROADMAP.md` — backlog structuré par phases, bugs, décisions produit
 - `TECHNICAL_NOTES.md` — schema DB, RLS, migrations, pièges techniques
 - `SUPABASE.md` — doc initiale (partiellement obsolète, se fier à TECHNICAL_NOTES.md)

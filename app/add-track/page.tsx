@@ -29,6 +29,7 @@ export default function AddTrackPage() {
   const [tsEndInput, setTsEndInput]     = useState("");
 
   const [rating, setRating]                     = useState<number | null>(null);
+  const [videoAuthor, setVideoAuthor]           = useState("");
   const [allCrates, setAllCrates]               = useState<Crate[]>([]);
   const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
 
@@ -117,7 +118,7 @@ export default function AddTrackPage() {
         notes:           form.notes,
         sourceTimestamp: finalTs,
         timestampEnd:    tsEndParsed,
-        videoAuthor:     "",
+        videoAuthor:     videoAuthor.trim(),
         trackIdHint:     "",
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
@@ -140,6 +141,7 @@ export default function AddTrackPage() {
     setError(null);
     setSelectedCrateIds([]);
     setRating(null);
+    setVideoAuthor("");
   }
 
   const tsFromUrl    = sourceTimestamp ?? extractTimestampFromUrl(form.url);
@@ -324,7 +326,7 @@ export default function AddTrackPage() {
                 </p>
               )}
             </FormRow>
-            <FormRow label="Platform" last>
+            <FormRow label="Platform">
               <select
                 value={form.platform}
                 onChange={(e) => set("platform", e.target.value)}
@@ -332,6 +334,15 @@ export default function AddTrackPage() {
               >
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
+            </FormRow>
+            <FormRow label="Video author" last>
+              <input
+                type="text"
+                placeholder="Channel, DJ, label…"
+                value={videoAuthor}
+                onChange={(e) => setVideoAuthor(e.target.value)}
+                className="form-input"
+              />
             </FormRow>
           </FormSection>
 

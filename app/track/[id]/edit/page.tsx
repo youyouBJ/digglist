@@ -254,7 +254,7 @@ export default function EditTrackPage() {
         {/* ── Section: ID info (IDs only) ──────────────────────────── */}
         {isIds && (
           <FormSection label="ID info">
-            <FormRow label="Auteur vidéo">
+            <FormRow label="Video author">
               <input
                 type="text"
                 placeholder="Nom du compte, DJ, label…"

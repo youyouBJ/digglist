@@ -248,7 +248,7 @@ export default function TrackDetailPage() {
         )}
 
         {track.videoAuthor && (
-          <SectionRow label="Auteur vidéo">
+          <SectionRow label="Video author">
             <span className="text-[13px]" style={{ color: "var(--t2)" }}>
               {track.videoAuthor}
             </span>
@@ -547,9 +547,13 @@ function getSoundCloudEmbedUrl(url: string): string | null {
   if (!/soundcloud\.com/.test(url)) return null;
   try {
     const parsed = new URL(url);
-    parsed.hash = "";          // strip #t=... — widget rejects fragment
-    parsed.searchParams.delete("t"); // strip ?t= if somehow present
-    const cleanUrl = parsed.toString();
+    // mobile app shares m.soundcloud.com — widget only accepts soundcloud.com
+    if (parsed.hostname === "m.soundcloud.com") parsed.hostname = "soundcloud.com";
+    parsed.hash = "";
+    parsed.searchParams.delete("t");
+    let cleanUrl = parsed.toString();
+    // strip trailing ? left after removing all params
+    if (cleanUrl.endsWith("?")) cleanUrl = cleanUrl.slice(0, -1);
     const p = new URLSearchParams({
       url:           cleanUrl,
       color:         "#3d9e87",
@@ -588,6 +592,7 @@ function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null 
   }
 
   if (scUrl) {
+    const isSet = /\/sets\//.test(url);
     return (
       <div className="mx-5 sm:mx-8 mb-4">
         <div className="rounded-[10px] overflow-hidden"
@@ -597,7 +602,7 @@ function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null 
             title="SoundCloud player"
             allow="autoplay"
             className="w-full"
-            style={{ border: "none", height: 120 }}
+            style={{ border: "none", height: isSet ? 300 : 120 }}
           />
         </div>
         <a
