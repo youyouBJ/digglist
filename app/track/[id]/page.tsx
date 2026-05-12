@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getTrackById, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getTrackById, updateTrack, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import {
   getTrackCrates, getCrates,
   addTrackToCrate, removeTrackFromCrate,
@@ -28,7 +28,14 @@ export default function TrackDetailPage() {
   const [trackCrates, setTrackCrates]     = useState<Crate[]>([]);
   const [allCrates, setAllCrates]         = useState<Crate[]>([]);
   const [showCrateSheet, setShowCrateSheet] = useState(false);
-  const prevOverflow                      = useRef("");
+  const prevOverflow                        = useRef("");
+
+  /* Mark as found sheet */
+  const [showFoundSheet, setShowFoundSheet] = useState(false);
+  const [foundTitle, setFoundTitle]         = useState("");
+  const [foundArtist, setFoundArtist]       = useState("");
+  const [foundLabel, setFoundLabel]         = useState("");
+  const [foundSaving, setFoundSaving]       = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -45,16 +52,17 @@ export default function TrackDetailPage() {
       .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
 
-  /* Scroll lock for crate sheet */
+  /* Scroll lock for any sheet */
   useEffect(() => {
-    if (showCrateSheet) {
+    const open = showCrateSheet || showFoundSheet;
+    if (open) {
       prevOverflow.current = document.body.style.overflow;
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = prevOverflow.current;
     }
     return () => { document.body.style.overflow = prevOverflow.current; };
-  }, [showCrateSheet]);
+  }, [showCrateSheet, showFoundSheet]);
 
   async function handleCrateToggle(crate: Crate) {
     const inCrate = trackCrates.some((c) => c.id === crate.id);
@@ -80,6 +88,31 @@ export default function TrackDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete.");
       setDeleting(false);
+    }
+  }
+
+  function openFoundSheet() {
+    setFoundTitle(track?.title ?? "");
+    setFoundArtist(track?.artist ?? "");
+    setFoundLabel(track?.label ?? "");
+    setShowFoundSheet(true);
+  }
+
+  async function handleMarkAsFound() {
+    if (!track) return;
+    setFoundSaving(true);
+    try {
+      await updateTrack(id, {
+        ...track,
+        title:      foundTitle.trim(),
+        artist:     foundArtist.trim(),
+        label:      foundLabel.trim(),
+        recordType: "track",
+      });
+      router.push("/library");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save.");
+      setFoundSaving(false);
     }
   }
 
@@ -186,18 +219,19 @@ export default function TrackDetailPage() {
                   Listen from {formatTimestamp(track.sourceTimestamp!)}
                 </a>
               )}
-              <Link
-                href={`/track/${id}/edit`}
+              <button
+                type="button"
+                onClick={openFoundSheet}
                 className="inline-flex items-center gap-[5px] text-[11px] rounded-[6px] px-[10px] py-[5px] transition-colors"
                 style={{
-                  color:   "var(--amber)",
-                  border:  "0.5px solid var(--amber-rule)",
+                  color:      "var(--amber)",
+                  border:     "0.5px solid var(--amber-rule)",
                   background: "transparent",
                 }}
               >
                 <CheckIcon />
                 Mark as found
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -472,20 +506,148 @@ export default function TrackDetailPage() {
         </div>
       )}
 
+      {/* ── Mark as found sheet ─────────────────────────────────────── */}
+      {showFoundSheet && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.60)", backdropFilter: "blur(3px)" }}
+            onClick={() => setShowFoundSheet(false)}
+          />
+          <div
+            className="absolute left-0 right-0 bottom-0 flex flex-col rounded-t-[22px] animate-sheet-up"
+            style={{
+              background:    "var(--bg2)",
+              borderTop:     "0.5px solid var(--rule2)",
+              boxShadow:     "0 -20px 50px -10px rgba(0,0,0,0.6)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            <div className="mx-auto mt-3 mb-4 w-9 h-1 rounded-full shrink-0"
+              style={{ background: "var(--rule3)" }} />
+
+            <div className="flex items-center justify-between px-5 mb-5 shrink-0">
+              <p className="text-[15px] font-medium" style={{ color: "var(--t1)" }}>Found it?</p>
+              <button
+                type="button"
+                onClick={() => setShowFoundSheet(false)}
+                className="text-[13px] font-medium"
+                style={{ color: "var(--t3)" }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div className="px-5 flex flex-col gap-4 pb-5">
+              {/* Title */}
+              <div>
+                <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--t4)" }}>
+                  Title
+                </p>
+                <input
+                  type="text"
+                  value={foundTitle}
+                  onChange={(e) => setFoundTitle(e.target.value)}
+                  placeholder="Track title"
+                  autoFocus
+                  className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none"
+                  style={{
+                    background: "var(--bg3)",
+                    border:     "0.5px solid var(--rule2)",
+                    color:      "var(--t1)",
+                    caretColor: "var(--amber)",
+                  }}
+                />
+              </div>
+
+              {/* Artist */}
+              <div>
+                <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--t4)" }}>
+                  Artist
+                </p>
+                <input
+                  type="text"
+                  value={foundArtist}
+                  onChange={(e) => setFoundArtist(e.target.value)}
+                  placeholder="Artist name"
+                  className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none"
+                  style={{
+                    background: "var(--bg3)",
+                    border:     "0.5px solid var(--rule2)",
+                    color:      "var(--t1)",
+                    caretColor: "var(--amber)",
+                  }}
+                />
+              </div>
+
+              {/* Label */}
+              <div>
+                <p className="text-[10px] tracking-[0.12em] uppercase mb-1.5"
+                  style={{ color: "var(--t4)" }}>
+                  Label
+                  <span className="ml-1 normal-case tracking-normal"
+                    style={{ color: "var(--t4)", opacity: 0.6 }}>
+                    — optional
+                  </span>
+                </p>
+                <input
+                  type="text"
+                  value={foundLabel}
+                  onChange={(e) => setFoundLabel(e.target.value)}
+                  placeholder="Record label"
+                  className="w-full rounded-[8px] px-3 py-2.5 text-[14px] focus:outline-none"
+                  style={{
+                    background: "var(--bg3)",
+                    border:     "0.5px solid var(--rule2)",
+                    color:      "var(--t1)",
+                    caretColor: "var(--amber)",
+                  }}
+                />
+              </div>
+
+              {/* Submit */}
+              <button
+                type="button"
+                onClick={handleMarkAsFound}
+                disabled={foundSaving || (!foundTitle.trim() && !foundArtist.trim())}
+                className="w-full h-11 rounded-[10px] text-[14px] font-medium transition-opacity disabled:opacity-40"
+                style={{ background: "var(--amber)", color: "#1a1000" }}
+              >
+                {foundSaving ? "Saving…" : "Mark as found →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Action bar ─────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-2 px-5 sm:px-8 pt-3 pb-4 mt-1"
         style={{ borderTop: "0.5px solid var(--rule)" }}
       >
-        {/* Edit */}
-        <Link
-          href={`/track/${id}/edit`}
-          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors"
-          style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
-        >
-          <EditIcon />
-          Edit
-        </Link>
+        {/* Mark as found (IDs) or Edit (Library) */}
+        {isIds ? (
+          <button
+            type="button"
+            onClick={openFoundSheet}
+            className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors"
+            style={{ background: "var(--amber-soft)", border: "0.5px solid var(--amber-rule)", color: "var(--amber)" }}
+          >
+            <CheckIcon />
+            Mark as found
+          </button>
+        ) : (
+          <Link
+            href={`/track/${id}/edit`}
+            className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors"
+            style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)", color: "var(--t2)" }}
+          >
+            <EditIcon />
+            Edit
+          </Link>
+        )}
 
         {/* Open source */}
         {track.sourceUrl && (
