@@ -5,12 +5,13 @@ import { useState, useEffect } from "react";
 import { createTrack } from "@/lib/supabase-tracks";
 import { getCrates, addTrackToCrate, type Crate } from "@/lib/supabase-crates";
 import { PLATFORMS, EMPTY_TRACK_FORM } from "@/lib/constants";
-import type { TrackFormState } from "@/lib/types";
+import type { TrackFormState, MixSetWithCount } from "@/lib/types";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
+import { getSets } from "@/lib/supabase-sets";
 import { extractTimestampFromUrl, formatTimestamp, parseManualTimestamp } from "@/lib/timestamp";
 
 export default function AddTrackPage() {
@@ -32,10 +33,13 @@ export default function AddTrackPage() {
   const [videoAuthor, setVideoAuthor]           = useState("");
   const [allCrates, setAllCrates]               = useState<Crate[]>([]);
   const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
+  const [allSets, setAllSets]                   = useState<MixSetWithCount[]>([]);
+  const [selectedSetId, setSelectedSetId]       = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getCrates().then(setAllCrates).catch(() => {});
+    getSets().then(setAllSets).catch(() => {});
   }, [user]);
 
   /* Pre-fill from quick-add redirect */
@@ -63,6 +67,13 @@ export default function AddTrackPage() {
 
   function set(field: keyof TrackFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function handleSetSelect(id: string) {
+    if (selectedSetId === id) { setSelectedSetId(null); return; }
+    setSelectedSetId(id);
+    const chosen = allSets.find((s) => s.id === id);
+    if (chosen?.sourceUrl && !form.url.trim()) set("url", chosen.sourceUrl);
   }
 
   async function handleFetch() {
@@ -120,7 +131,7 @@ export default function AddTrackPage() {
         timestampEnd:    tsEndParsed,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     "",
-        setId:           null,
+        setId:           selectedSetId,
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       setSaved(true);
@@ -141,6 +152,7 @@ export default function AddTrackPage() {
     setTsEndInput("");
     setError(null);
     setSelectedCrateIds([]);
+    setSelectedSetId(null);
     setRating(null);
     setVideoAuthor("");
   }
@@ -250,6 +262,38 @@ export default function AddTrackPage() {
             <p className="px-5 sm:px-8 mb-2 text-[13px] text-red-400">{error}</p>
           )}
 
+          {/* ── Set ─────────────────────────────────────────────── */}
+          {allSets.length > 0 && (
+            <FormSection label="Set">
+              <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
+                {allSets.map((s) => {
+                  const sel = selectedSetId === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSetSelect(s.id)}
+                      className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium"
+                      style={sel
+                        ? { background: "rgba(61,158,135,0.10)", color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.35)" }
+                        : { background: "var(--bg3)", color: "var(--t4)", border: "0.5px solid var(--rule2)" }
+                      }
+                    >
+                      <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                        style={{ background: sel ? "var(--teal)" : "var(--t4)" }} />
+                      {s.title}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSetId && finalTs === null && (
+                <p className="px-5 sm:px-8 pb-3 text-[11px]" style={{ color: "var(--amber)" }}>
+                  ⏱ Timestamp required when linking to a set
+                </p>
+              )}
+            </FormSection>
+          )}
+
           {/* ── Source ───────────────────────────────────────────── */}
           <FormSection label="Source">
             {/* URL + Fetch */}
@@ -295,7 +339,7 @@ export default function AddTrackPage() {
               )}
             </div>
 
-            <FormRow label="Début">
+            <FormRow label="Début" required={!!selectedSetId}>
               <input
                 type="text"
                 inputMode="numeric"
@@ -437,7 +481,7 @@ export default function AddTrackPage() {
           >
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || (selectedSetId !== null && finalTs === null)}
               className="flex-1 h-11 rounded-[10px] text-[13px] font-medium disabled:opacity-50"
               style={{ background: "var(--t1)", color: "var(--bg)" }}
             >

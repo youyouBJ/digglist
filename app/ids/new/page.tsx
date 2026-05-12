@@ -11,6 +11,8 @@ import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
+import { getSets } from "@/lib/supabase-sets";
+import type { MixSetWithCount } from "@/lib/types";
 import {
   extractTimestampFromUrl,
   formatTimestamp,
@@ -48,6 +50,10 @@ export default function LogIdPage() {
   const [allCrates, setAllCrates]               = useState<Crate[]>([]);
   const [selectedCrateIds, setSelectedCrateIds] = useState<string[]>([]);
 
+  /* Set */
+  const [allSets, setAllSets]                   = useState<MixSetWithCount[]>([]);
+  const [selectedSetId, setSelectedSetId]       = useState<string | null>(null);
+
   /* Rating */
   const [rating, setRating]         = useState<number | null>(null);
 
@@ -58,6 +64,7 @@ export default function LogIdPage() {
   useEffect(() => {
     if (!user) return;
     getCrates().then(setAllCrates).catch(() => {});
+    getSets().then(setAllSets).catch(() => {});
   }, [user]);
 
   if (!user) return <PageLoader />;
@@ -76,6 +83,13 @@ export default function LogIdPage() {
       return;
     }
     fetchTimer.current = setTimeout(() => triggerFetch(trimmed), 150);
+  }
+
+  function handleSetSelect(id: string) {
+    if (selectedSetId === id) { setSelectedSetId(null); return; }
+    setSelectedSetId(id);
+    const chosen = allSets.find((s) => s.id === id);
+    if (chosen?.sourceUrl && !url.trim()) handleUrlChange(chosen.sourceUrl);
   }
 
   async function triggerFetch(rawUrl: string) {
@@ -130,7 +144,7 @@ export default function LogIdPage() {
         timestampEnd:    tsEnd,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     trackIdHint.trim(),
-        setId:           null,
+        setId:           selectedSetId,
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       router.push("/ids");
@@ -174,6 +188,38 @@ export default function LogIdPage() {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+
+        {/* ── Section: Set ─────────────────────────────────────────── */}
+        {allSets.length > 0 && (
+          <FormSection label="Set">
+            <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
+              {allSets.map((s) => {
+                const sel = selectedSetId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleSetSelect(s.id)}
+                    className="flex items-center gap-1.5 px-[11px] py-[5px] rounded-full text-[12px] font-medium"
+                    style={sel
+                      ? { background: "rgba(201,162,74,0.12)", color: "var(--amber)", border: "0.5px solid rgba(201,162,74,0.35)" }
+                      : { background: "var(--bg3)", color: "var(--t4)", border: "0.5px solid var(--rule2)" }
+                    }
+                  >
+                    <span className="w-[5px] h-[5px] rounded-full shrink-0"
+                      style={{ background: sel ? "var(--amber)" : "var(--t4)" }} />
+                    {s.title}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedSetId && !tsStart && (
+              <p className="px-5 sm:px-8 pb-3 text-[11px]" style={{ color: "var(--amber)" }}>
+                ⏱ Timestamp required when linking to a set
+              </p>
+            )}
+          </FormSection>
+        )}
 
         {/* ── Section: Source ──────────────────────────────────────── */}
         <FormSection label="Source">
@@ -230,7 +276,7 @@ export default function LogIdPage() {
 
         {/* ── Section: Timestamps ──────────────────────────────────── */}
         <FormSection label="Timestamps">
-          <FormRow label="Début">
+          <FormRow label="Début" required={!!selectedSetId}>
             <input
               type="text"
               inputMode="numeric"
@@ -335,7 +381,7 @@ export default function LogIdPage() {
           style={{ borderTop: "0.5px solid var(--rule)" }}>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || (selectedSetId !== null && !tsStart)}
             className="flex-1 h-11 rounded-[10px] text-[13px] font-medium disabled:opacity-50"
             style={{ background: "var(--amber)", color: "#1a1000" }}
           >
@@ -419,10 +465,11 @@ function FormSection({ label, children }: { label: string; children: React.React
   );
 }
 
-function FormRow({ label, children, last }: {
+function FormRow({ label, children, last, required }: {
   label: string;
   children: React.ReactNode;
   last?: boolean;
+  required?: boolean;
 }) {
   return (
     <div
@@ -430,7 +477,7 @@ function FormRow({ label, children, last }: {
       style={{ borderBottom: last ? undefined : "0.5px solid var(--rule)" }}
     >
       <span className="text-[13px] shrink-0 w-[90px] pt-[1px]" style={{ color: "var(--t3)" }}>
-        {label}
+        {label}{required && <span style={{ color: "var(--amber)" }}> *</span>}
       </span>
       <div className="flex-1 min-w-0">
         {children}
