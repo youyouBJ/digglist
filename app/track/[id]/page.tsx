@@ -234,6 +234,14 @@ export default function TrackDetailPage() {
           </SectionRow>
         )}
 
+        {track.label && (
+          <SectionRow label="Label">
+            <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+              {track.label}
+            </span>
+          </SectionRow>
+        )}
+
         {track.sourceUrl && (
           <SectionRow label="Source">
             <a

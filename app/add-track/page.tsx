@@ -88,6 +88,7 @@ export default function AddTrackPage() {
         platform: (PLATFORMS as readonly string[]).includes(data.platform) ? data.platform : prev.platform,
         url:      data.sourceUrl || prev.url,
         imageUrl: data.imageUrl  || prev.imageUrl,
+        notes:    data.notes    || prev.notes,
       }));
       setTimestamp(data.timestamp ?? extractTimestampFromUrl(trimmed));
       setFetchPhase("success");
@@ -108,6 +109,7 @@ export default function AddTrackPage() {
       const newTrack = await createTrack({
         title:           form.title,
         artist:          form.artist,
+        label:           form.label,
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,
@@ -352,12 +354,21 @@ export default function AddTrackPage() {
                 className="form-input"
               />
             </FormRow>
-            <FormRow label="Mood" last>
+            <FormRow label="Mood">
               <input
                 type="text"
                 placeholder="Chill, Dark, Uplifting…"
                 value={form.mood}
                 onChange={(e) => set("mood", e.target.value)}
+                className="form-input"
+              />
+            </FormRow>
+            <FormRow label="Label" last>
+              <input
+                type="text"
+                placeholder="Warp, Ninja Tune, XL…"
+                value={form.label}
+                onChange={(e) => set("label", e.target.value)}
                 className="form-input"
               />
             </FormRow>

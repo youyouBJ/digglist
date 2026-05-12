@@ -42,6 +42,7 @@ export default function EditTrackPage() {
         setForm({
           title:    t.title,
           artist:   t.artist,
+          label:    t.label,
           platform: t.sourcePlatform,
           url:      t.sourceUrl,
           imageUrl: t.imageUrl,
@@ -71,6 +72,7 @@ export default function EditTrackPage() {
       await updateTrack(id, {
         title:           form.title,
         artist:          form.artist,
+        label:           form.label,
         sourcePlatform:  form.platform,
         sourceUrl:       form.url,
         imageUrl:        form.imageUrl,
@@ -238,12 +240,21 @@ export default function EditTrackPage() {
               className="form-input"
             />
           </FormRow>
-          <FormRow label="Mood" last>
+          <FormRow label="Mood">
             <input
               type="text"
               placeholder="Chill, Dark, Uplifting…"
               value={form.mood}
               onChange={(e) => set("mood", e.target.value)}
+              className="form-input"
+            />
+          </FormRow>
+          <FormRow label="Label" last>
+            <input
+              type="text"
+              placeholder="Warp, Ninja Tune, XL…"
+              value={form.label}
+              onChange={(e) => set("label", e.target.value)}
               className="form-input"
             />
           </FormRow>

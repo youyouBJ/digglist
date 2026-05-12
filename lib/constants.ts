@@ -49,6 +49,7 @@ export const CRATE_COLORS = [
 export const EMPTY_TRACK_FORM: TrackFormState = {
   title:    "",
   artist:   "",
+  label:    "",
   platform: "YouTube",
   url:      "",
   imageUrl: "",

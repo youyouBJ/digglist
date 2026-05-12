@@ -125,6 +125,7 @@ export default function QuickAddPage() {
       await createTrack({
         title:           title.trim() || (status === "IDs Needed" ? "Unknown track" : url.trim()),
         artist:          artist.trim(),
+        label:           "",
         sourcePlatform:  platform,
         sourceUrl:       url.trim(),
         imageUrl,

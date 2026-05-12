@@ -2,6 +2,7 @@ export type Track = {
   id: string;
   title: string;
   artist: string;
+  label: string;
   sourcePlatform: string;
   sourceUrl: string;
   imageUrl: string;
@@ -16,6 +17,7 @@ export type Track = {
 export type TrackFormState = {
   title: string;
   artist: string;
+  label: string;
   platform: string;
   url: string;
   imageUrl: string;
