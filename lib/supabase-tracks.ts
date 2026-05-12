@@ -18,6 +18,9 @@ export type TrackRow = {
   status: string;
   notes: string;
   source_timestamp: number | null;
+  timestamp_end?: number | null;
+  video_author: string;
+  track_id_hint: string;
   created_at: string;
 };
 
@@ -37,6 +40,9 @@ export function toTrack(row: TrackRow): Track {
     status:          row.status,
     notes:           row.notes,
     sourceTimestamp: row.source_timestamp ?? null,
+    timestampEnd:    row.timestamp_end ?? null,
+    videoAuthor:     row.video_author ?? "",
+    trackIdHint:     row.track_id_hint ?? "",
     createdAt:       row.created_at,
   };
 }
@@ -56,6 +62,9 @@ function toRow(data: Omit<Track, "id" | "createdAt">) {
     status:           data.status,
     notes:            data.notes,
     source_timestamp: data.sourceTimestamp ?? null,
+    timestamp_end:    data.timestampEnd ?? null,
+    video_author:     data.videoAuthor,
+    track_id_hint:    data.trackIdHint,
   };
 }
 

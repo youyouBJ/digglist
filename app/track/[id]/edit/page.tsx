@@ -87,6 +87,9 @@ export default function EditTrackPage() {
         status:          form.status,
         notes:           form.notes,
         sourceTimestamp: finalTimestamp,
+        timestampEnd:    track!.timestampEnd,
+        videoAuthor:     track!.videoAuthor,
+        trackIdHint:     track!.trackIdHint,
       });
       await syncTrackCrates(id, selectedCrateIds, initialCrateIds);
       router.push(`/track/${id}`);

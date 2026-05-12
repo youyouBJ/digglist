@@ -108,7 +108,7 @@ export default function IdsPage() {
           )}
         </div>
         <Link
-          href="/quick-add?status=IDs+Needed"
+          href="/ids/new"
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[12px] font-medium mt-2"
           style={{
             background: "var(--amber-soft)",
@@ -345,7 +345,7 @@ function EmptyState() {
         Heard something you can't identify? Log it here — set, timestamp, source, any details you remember.
       </p>
       <Link
-        href="/quick-add?status=IDs+Needed"
+        href="/ids/new"
         className="mt-1 px-5 py-2.5 rounded-xl text-[13px] font-medium"
         style={{ background: "var(--amber)", color: "#1a1000" }}
       >

@@ -115,6 +115,9 @@ export default function AddTrackPage() {
         status:          form.status,
         notes:           form.notes,
         sourceTimestamp: finalTs,
+        timestampEnd:    null,
+        videoAuthor:     "",
+        trackIdHint:     "",
       });
       await Promise.all(selectedCrateIds.map((cid) => addTrackToCrate(cid, newTrack.id)));
       setSaved(true);

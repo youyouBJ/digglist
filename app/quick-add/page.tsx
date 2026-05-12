@@ -136,6 +136,9 @@ export default function QuickAddPage() {
         status,
         notes:           "",
         sourceTimestamp,
+        timestampEnd:    null,
+        videoAuthor:     "",
+        trackIdHint:     "",
       });
       setSaved(true);
       setTimeout(() => {

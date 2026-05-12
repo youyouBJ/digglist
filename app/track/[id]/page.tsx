@@ -247,6 +247,37 @@ export default function TrackDetailPage() {
           </SectionRow>
         )}
 
+        {track.videoAuthor && (
+          <SectionRow label="Auteur vidéo">
+            <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+              {track.videoAuthor}
+            </span>
+          </SectionRow>
+        )}
+
+        {track.trackIdHint && (
+          <SectionRow label="Track ID">
+            <span className="text-[13px]" style={{ color: "var(--t2)" }}>
+              {track.trackIdHint}
+            </span>
+          </SectionRow>
+        )}
+
+        {track.timestampEnd !== null && track.sourceTimestamp !== null && (
+          <SectionRow label="Segment">
+            <span
+              className="text-[13px] font-medium"
+              style={{
+                color: "var(--amber)",
+                fontFamily: "var(--font-jb-mono, monospace)",
+                fontFeatureSettings: '"tnum"',
+              }}
+            >
+              {formatTimestamp(track.sourceTimestamp!)} → {formatTimestamp(track.timestampEnd!)}
+            </span>
+          </SectionRow>
+        )}
+
         {track.sourceUrl && (
           <SectionRow label="Source">
             <a

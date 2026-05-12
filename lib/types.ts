@@ -13,6 +13,9 @@ export type Track = {
   status: string;
   notes: string;
   sourceTimestamp: number | null;
+  timestampEnd: number | null;
+  videoAuthor: string;
+  trackIdHint: string;
   createdAt: string;
 };
 
