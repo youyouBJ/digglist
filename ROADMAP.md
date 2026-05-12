@@ -94,11 +94,14 @@ alter table public.tracks
 
 ### Ordre d'exécution
 
-| Ordre | ID | Description | Fichier | Complexité | Dépendances |
-|-------|----|-------------|---------|-----------|-------------|
-| 1 | FEAT-SET-02 | Flow "Log from a set" : URL set + timestamp → form pré-rempli | `app/sets/log/page.tsx` | M | FEAT-SET-01 |
-| 2 | FEAT-SC-TS | SoundCloud embed avec timestamp (SC Widget JS API `seekTo`) | `track/[id]/page.tsx` | L | aucune (indépendant) |
-| 3 | FEAT-AUTOPLAY | Auto-play au timestamp quand track vient d'un set | `track/[id]/page.tsx` | M | FEAT-SC-TS + set_id sur Track |
+| Ordre | ID | Description | Fichier | Complexité | Dépendances | État |
+|-------|----|-------------|---------|-----------|-------------|------|
+| 1 | FEAT-SET-ADDTRACK | Sélecteur set dans Add Track — URL pré-remplie, ts requis | `app/add-track/page.tsx` | S | FEAT-SET-01 | ✅ |
+| 2 | FEAT-SET-LOGID | Sélecteur set dans Log ID — URL pré-remplie + auto-fetch, ts requis | `app/ids/new/page.tsx` | S | FEAT-SET-01 | ✅ |
+| 3 | FEAT-SET-DETAIL | Section "From set" sur détail track — cover, titre, Open set, Play from ts | `track/[id]/page.tsx` | S | FEAT-SET-01 | ✅ |
+| 4 | FEAT-SET-ROWS | Indicateur set discret dans Library rows et IDs rows | `library/page.tsx`, `ids/page.tsx` | XS | FEAT-SET-01 | ✅ |
+| 5 | FEAT-SET-MOMENTS | Review `/sets/[id]` moments — clarté Tracks vs IDs, qualité "Log from set" | `app/sets/[id]/page.tsx` | M | toutes ci-dessus | À faire |
+| 6 | FEAT-SC-TS | SoundCloud embed avec timestamp (SC Widget JS API `seekTo`) | `track/[id]/page.tsx` | L | aucune | À faire |
 
 **Risque SC Widget JS API** : l'API `SC.Widget` communique via `postMessage` cross-origin. Timing subtil — le widget doit être ready avant `seekTo`. Risque de régression sur l'embed existant. **Traiter FEAT-SC-TS en dernier dans ce sprint.**
 

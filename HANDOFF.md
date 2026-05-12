@@ -18,26 +18,23 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprint 0 ✅ Sprint 2A infrastructure ✅. Prochain : Sprint 2B (Sets UX).**
+**Beta stable. Sprint 0 ✅ Sprint 2A ✅ Sprint 2B tâches 1–4 ✅. Prochaine : tâche 5 (review /sets/[id]).**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 2B — Sets UX
+## Prochaine tâche recommandée : Sprint 2B tâche 5 — Review `/sets/[id]` moments
 
-**Sprint 2A — Sets System infrastructure terminé. ✅**
+**Sprint 2B tâches 1–4 terminées ✅**
 
 Ce qui est fait :
-- Table `sets` + `tracks.set_id` en DB (migration idempotente exécutée)
-- `lib/supabase-sets.ts` : CRUD complet + `getSetTracks`
-- `lib/types.ts` : type `MixSet`, `MixSetWithCount`, `Track.setId`
-- Pages : `/sets`, `/sets/new`, `/sets/[id]`, `/sets/[id]/edit`
-- BottomNav : Crates → Sets (icône waveform)
-- Sheet "Log moment" sur `/sets/[id]` : mode Track / ID needed
+- `/add-track` : sélecteur de set (pills teal), URL pré-remplie depuis set.sourceUrl, timestamp début requis si set choisi
+- `/ids/new` : même sélecteur (pills amber), URL pré-remplie + auto-fetch déclenché, timestamp requis
+- `/track/[id]` : section "From set" — cover mini, titre, plateforme, "Open set →", "Play from timestamp" (YT/SC timestampé)
+- Library rows : waveform 9px + nom du set en var(--t4) sous les notes
+- IDs rows : même indicateur en amber muted rgba(201,162,74,0.40)
 
-Prochaine étape Sprint 2B :
-- Lier les tracks existants à des sets depuis `/add-track` et `/ids/new`
-- Afficher le set d'origine sur la page détail d'un track
-- Accès aux Crates depuis Library (lien header ou section)
+Prochaine étape :
+- **Tâche 5** : review `/sets/[id]/page.tsx` — clarifier l'affichage des moments (Tracks vs IDs), qualité du flow "Log from this set"
 
 ---
 
