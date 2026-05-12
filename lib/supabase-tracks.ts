@@ -47,6 +47,7 @@ function toRow(data: Omit<Track, "id" | "createdAt">) {
     artist:           data.artist,
     label:            data.label,
     record_type:      data.recordType,
+    rating:           data.rating ?? null,
     source_platform:  data.sourcePlatform,
     source_url:       data.sourceUrl,
     image_url:        data.imageUrl,
