@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
-import { getCrates, getCrateTrackIds, type CrateWithCount } from "@/lib/supabase-crates";
+import { getCrates, getCrateTrackIds, getTrackCrateMap, type Crate, type CrateWithCount } from "@/lib/supabase-crates";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
@@ -39,13 +39,15 @@ export default function IdsPage() {
   const [crates, setCrates]               = useState<CrateWithCount[]>([]);
   const [crateFilter, setCrateFilter]     = useState("");
   const [crateTrackIds, setCrateTrackIds] = useState<Set<string> | null>(null);
+  const [trackCrateMap, setTrackCrateMap] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getTracks(), getCrates()])
-      .then(([t, c]) => {
+    Promise.all([getTracks(), getCrates(), getTrackCrateMap()])
+      .then(([t, c, tcm]) => {
         setTracks(t.filter((tr) => tr.recordType === "id_needed"));
         setCrates(c);
+        setTrackCrateMap(tcm);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -200,6 +202,7 @@ export default function IdsPage() {
                 <IdRow
                   key={track.id}
                   track={track}
+                  trackCrates={crates.filter((c) => (trackCrateMap[track.id] ?? []).includes(c.id))}
                   confirming={confirmId === track.id}
                   onAskDelete={() => setConfirmId(track.id)}
                   onCancelDelete={() => setConfirmId(null)}
@@ -220,17 +223,26 @@ export default function IdsPage() {
 
 function IdRow({
   track,
+  trackCrates,
   confirming,
   onAskDelete,
   onCancelDelete,
   onConfirmDelete,
 }: {
   track: Track;
+  trackCrates: Crate[];
   confirming: boolean;
   onAskDelete: () => void;
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
 }) {
+  const hasRating = track.rating !== null && track.rating > 0;
+  const hasCrates = trackCrates.length > 0;
+  const hasExtras = hasRating || hasCrates;
+  const tsStart   = track.sourceTimestamp;
+  const tsEnd     = track.timestampEnd;
+  const hasTs     = tsStart !== null && tsStart !== undefined;
+
   return (
     <li
       className="group relative"
@@ -277,16 +289,34 @@ function IdRow({
             {track.title || "Unknown track"}
           </p>
           {track.notes && (
-            <p className="text-[11px] leading-[1.5] line-clamp-2"
+            <p className="text-[11px] leading-[1.5] line-clamp-1"
               style={{ color: "rgba(201,162,74,0.60)" }}>
               {track.notes}
             </p>
+          )}
+          {hasExtras && (
+            <div className="flex items-center gap-[7px] mt-[6px]">
+              {hasRating && (
+                <span className="text-[10px] leading-none tracking-[0.06em]"
+                  style={{ color: "var(--amber)" }}>
+                  {"★".repeat(track.rating!)}
+                </span>
+              )}
+              {hasCrates && (
+                <span className="flex items-center gap-[4px]">
+                  {trackCrates.slice(0, 4).map((c) => (
+                    <span key={c.id} className="w-[5px] h-[5px] rounded-full shrink-0"
+                      style={{ background: c.color }} />
+                  ))}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
         {/* Right — timestamp + date */}
         <div className="flex flex-col items-end gap-[3px] shrink-0 pt-[1px]">
-          {track.sourceTimestamp !== null && track.sourceTimestamp !== undefined && (
+          {hasTs && (
             <span
               className="text-[11px] leading-none whitespace-nowrap"
               style={{
@@ -295,7 +325,9 @@ function IdRow({
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              {formatTimestamp(track.sourceTimestamp)}
+              {tsEnd !== null && tsEnd !== undefined
+                ? `${formatTimestamp(tsStart!)} – ${formatTimestamp(tsEnd)}`
+                : formatTimestamp(tsStart!)}
             </span>
           )}
           <span className="text-[10px] leading-none whitespace-nowrap"

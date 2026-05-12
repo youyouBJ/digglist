@@ -200,3 +200,16 @@ export async function syncTrackCrates(
     ...removed.map((id) => removeTrackFromCrate(id, trackId)),
   ]);
 }
+
+export async function getTrackCrateMap(): Promise<Record<string, string[]>> {
+  const { data, error } = await supabase
+    .from("crate_tracks")
+    .select("crate_id, track_id");
+  if (error) throw new Error(error.message);
+  const map: Record<string, string[]> = {};
+  for (const { crate_id, track_id } of data as { crate_id: string; track_id: string }[]) {
+    if (!map[track_id]) map[track_id] = [];
+    map[track_id].push(crate_id);
+  }
+  return map;
+}

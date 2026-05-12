@@ -24,10 +24,12 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## Prochaine tâche recommandée : Sprint 0 — UX Quick Wins
 
-**BUG-02 corrigé. Enchaîner sur les UX quick wins dans cet ordre :**
+**UX-01 + density + timestamps corrigés. Enchaîner sur les UX quick wins restants :**
 
-1. ~~**BUG-02** — Back button conditionnel~~ ✅
-2. **UX-01** — Rating visible dans les rows Library et IDs — `library/page.tsx`, `ids/page.tsx` — complexité S
+1. ~~BUG-02 — Back button conditionnel~~ ✅
+2. ~~UX-01 — Rating ★ + crate dots dans les rows~~ ✅
+3. ~~UX-DENSITY-01 — Notes line-clamp-1 + timestamp range~~ ✅
+4. **CRATES-COUNT-01** — Crate filter pills avec count `Techno (12)` — `library/page.tsx`, `ids/page.tsx` — complexité S
 3. **UX-DENSITY-01** — Notes line-clamp-1 en liste Library — `library/page.tsx` — complexité XS
 4. **CRATES-COUNT-01** — Crate filter pills avec count `Techno (12)` — `library/page.tsx`, `ids/page.tsx` — complexité S
 5. **SORT-01** — Tri Library et IDs (Date ↓, Rating ↓, A–Z) — `library/page.tsx`, `ids/page.tsx` — complexité S

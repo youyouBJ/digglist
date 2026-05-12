@@ -27,15 +27,15 @@
 
 ### Ordre d'exécution
 
-| Ordre | ID | Description | Fichier | Complexité | Dépendances |
-|-------|----|-------------|---------|-----------|-------------|
-| 1 | BUG-02 | Back button Track Detail conditionnel (`/library` vs `/ids`) | `track/[id]/page.tsx` l.116 | S | aucune |
-| 2 | UX-01 | Rating visible dans les rows Library et IDs | `library/page.tsx`, `ids/page.tsx` | S | aucune |
-| 3 | UX-06 / UX-DENSITY-01 | Notes line-clamp-1 en liste Library | `library/page.tsx` | XS | aucune |
-| 4 | UX-03 / CRATES-COUNT-01 | Crate filter pills avec count `Techno (12)` | `library/page.tsx`, `ids/page.tsx` | S | aucune |
-| 5 | SORT-01 | Tri Library et IDs : Date ↓, Rating ↓, A–Z | `library/page.tsx`, `ids/page.tsx` | S | aucune |
-| 6 | UX-FOUND-01 | "Mark as found" — sheet légère 3 champs au lieu du form edit complet | `track/[id]/page.tsx` | M | aucune |
-| 7 | CRATES-VIS-02 | Hiérarchie visuelle sous-crates : indentation + trait vertical | `crates/page.tsx` | S | aucune |
+| Ordre | ID | Description | Fichier | Complexité | Dépendances | État |
+|-------|----|-------------|---------|-----------|-------------|------|
+| 1 | BUG-02 | Back button Track Detail conditionnel | `track/[id]/page.tsx` | S | aucune | ✅ |
+| 2 | UX-01 | Rating ★ + crate dots dans les rows Library et IDs | `library/page.tsx`, `ids/page.tsx` | S | aucune | ✅ |
+| 3 | UX-06 / UX-DENSITY-01 | Notes line-clamp-1 + timestamp range | `library/page.tsx`, `ids/page.tsx` | XS | aucune | ✅ |
+| 4 | UX-03 / CRATES-COUNT-01 | Crate filter pills avec count `Techno (12)` | `library/page.tsx`, `ids/page.tsx` | S | aucune | À faire |
+| 5 | SORT-01 | Tri Library et IDs : Date ↓, Rating ↓, A–Z | `library/page.tsx`, `ids/page.tsx` | S | aucune | À faire |
+| 6 | UX-FOUND-01 | "Mark as found" — sheet légère 3 champs | `track/[id]/page.tsx` | M | aucune | À faire |
+| 7 | CRATES-VIS-02 | Hiérarchie visuelle sous-crates | `crates/page.tsx` | S | aucune | À faire |
 
 **À éviter dans ce sprint :**
 - UX-08 (Add Track form reorder) — risque de régression sur un form complexe
