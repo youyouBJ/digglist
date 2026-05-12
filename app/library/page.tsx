@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getSets } from "@/lib/supabase-sets";
+import type { MixSetWithCount } from "@/lib/types";
 import { getCrates, getCrateTrackIds, getTrackCrateMap, type Crate, type CrateWithCount } from "@/lib/supabase-crates";
 import { PLATFORMS } from "@/lib/constants";
 import { formatTimestamp } from "@/lib/timestamp";
@@ -52,6 +54,9 @@ export default function LibraryPage() {
   const [sort, setSort]                 = useState<"date" | "rating" | "az">("date");
   const [confirmId, setConfirmId]       = useState<string | null>(null);
 
+  /* Sets */
+  const [allSets, setAllSets]             = useState<MixSetWithCount[]>([]);
+
   /* Crates */
   const [crates, setCrates]               = useState<CrateWithCount[]>([]);
   const [crateFilter, setCrateFilter]     = useState("");
@@ -60,8 +65,8 @@ export default function LibraryPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getTracks(), getCrates(), getTrackCrateMap()])
-      .then(([t, c, tcm]) => { setAllTracks(t); setCrates(c); setTrackCrateMap(tcm); })
+    Promise.all([getTracks(), getCrates(), getTrackCrateMap(), getSets()])
+      .then(([t, c, tcm, s]) => { setAllTracks(t); setCrates(c); setTrackCrateMap(tcm); setAllSets(s); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [user]);
@@ -74,6 +79,10 @@ export default function LibraryPage() {
   }, [crateFilter]);
 
   if (!user) return <PageLoader />;
+
+  /* Set title lookup map */
+  const setTitleMap: Record<string, string> = {};
+  for (const s of allSets) setTitleMap[s.id] = s.title;
 
   /* IDs live on /ids — exclude from Library */
   const idsCount = allTracks.filter((t) => t.recordType === "id_needed").length;
@@ -339,6 +348,7 @@ export default function LibraryPage() {
                   key={track.id}
                   track={track}
                   trackCrates={crates.filter((c) => (trackCrateMap[track.id] ?? []).includes(c.id))}
+                  setTitle={track.setId ? setTitleMap[track.setId] : undefined}
                   confirming={confirmId === track.id}
                   onAskDelete={() => setConfirmId(track.id)}
                   onCancelDelete={() => setConfirmId(null)}
@@ -360,6 +370,7 @@ export default function LibraryPage() {
 function TrackRow({
   track,
   trackCrates,
+  setTitle,
   confirming,
   onAskDelete,
   onCancelDelete,
@@ -367,6 +378,7 @@ function TrackRow({
 }: {
   track: Track;
   trackCrates: Crate[];
+  setTitle?: string;
   confirming: boolean;
   onAskDelete: () => void;
   onCancelDelete: () => void;
@@ -413,6 +425,18 @@ function TrackRow({
             <p className="text-[11px] leading-[1.5] line-clamp-1 mt-[2px]"
               style={{ color: "var(--t3)" }}>
               {track.notes}
+            </p>
+          )}
+          {track.setId && setTitle && (
+            <p className="text-[10px] leading-none mt-[4px] flex items-center gap-[3px]"
+              style={{ color: "var(--t4)" }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+                <rect x="3"  y="14" width="2.5" height="6"  rx="1.25" />
+                <rect x="8"  y="9"  width="2.5" height="11" rx="1.25" />
+                <rect x="13" y="5"  width="2.5" height="15" rx="1.25" />
+                <rect x="18" y="11" width="2.5" height="8"  rx="1.25" />
+              </svg>
+              <span className="truncate">{setTitle}</span>
             </p>
           )}
           {hasExtras && (

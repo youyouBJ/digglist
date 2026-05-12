@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getSets } from "@/lib/supabase-sets";
+import type { MixSetWithCount } from "@/lib/types";
 import { getCrates, getCrateTrackIds, getTrackCrateMap, type Crate, type CrateWithCount } from "@/lib/supabase-crates";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
@@ -50,6 +52,9 @@ export default function IdsPage() {
   const [sort, setSort]             = useState<"date" | "rating" | "az">("date");
   const [confirmId, setConfirmId]   = useState<string | null>(null);
 
+  /* Sets */
+  const [allSets, setAllSets]             = useState<MixSetWithCount[]>([]);
+
   /* Crates */
   const [crates, setCrates]               = useState<CrateWithCount[]>([]);
   const [crateFilter, setCrateFilter]     = useState("");
@@ -58,11 +63,12 @@ export default function IdsPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getTracks(), getCrates(), getTrackCrateMap()])
-      .then(([t, c, tcm]) => {
+    Promise.all([getTracks(), getCrates(), getTrackCrateMap(), getSets()])
+      .then(([t, c, tcm, s]) => {
         setTracks(t.filter((tr) => tr.recordType === "id_needed"));
         setCrates(c);
         setTrackCrateMap(tcm);
+        setAllSets(s);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -76,6 +82,10 @@ export default function IdsPage() {
   }, [crateFilter]);
 
   if (!user) return <PageLoader />;
+
+  /* Set title lookup map */
+  const setTitleMap: Record<string, string> = {};
+  for (const s of allSets) setTitleMap[s.id] = s.title;
 
   /* Count IDs per crate */
   const crateCountMap: Record<string, number> = {};
@@ -269,6 +279,7 @@ export default function IdsPage() {
                   key={track.id}
                   track={track}
                   trackCrates={crates.filter((c) => (trackCrateMap[track.id] ?? []).includes(c.id))}
+                  setTitle={track.setId ? setTitleMap[track.setId] : undefined}
                   confirming={confirmId === track.id}
                   onAskDelete={() => setConfirmId(track.id)}
                   onCancelDelete={() => setConfirmId(null)}
@@ -290,6 +301,7 @@ export default function IdsPage() {
 function IdRow({
   track,
   trackCrates,
+  setTitle,
   confirming,
   onAskDelete,
   onCancelDelete,
@@ -297,6 +309,7 @@ function IdRow({
 }: {
   track: Track;
   trackCrates: Crate[];
+  setTitle?: string;
   confirming: boolean;
   onAskDelete: () => void;
   onCancelDelete: () => void;
@@ -358,6 +371,18 @@ function IdRow({
             <p className="text-[11px] leading-[1.5] line-clamp-1"
               style={{ color: "rgba(201,162,74,0.60)" }}>
               {track.notes}
+            </p>
+          )}
+          {track.setId && setTitle && (
+            <p className="text-[10px] leading-none mt-[4px] flex items-center gap-[3px]"
+              style={{ color: "rgba(201,162,74,0.40)" }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+                <rect x="3"  y="14" width="2.5" height="6"  rx="1.25" />
+                <rect x="8"  y="9"  width="2.5" height="11" rx="1.25" />
+                <rect x="13" y="5"  width="2.5" height="15" rx="1.25" />
+                <rect x="18" y="11" width="2.5" height="8"  rx="1.25" />
+              </svg>
+              <span className="truncate">{setTitle}</span>
             </p>
           )}
           {hasExtras && (

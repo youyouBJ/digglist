@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getTrackById, updateTrack, deleteTrack, type Track } from "@/lib/supabase-tracks";
+import { getSetById } from "@/lib/supabase-sets";
+import type { MixSet } from "@/lib/types";
 import {
   getTrackCrates, getCrates,
   addTrackToCrate, removeTrackFromCrate,
@@ -23,6 +25,9 @@ export default function TrackDetailPage() {
   const [error, setError]                 = useState<string | null>(null);
   const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  /* Set origin */
+  const [originSet, setOriginSet]         = useState<MixSet | null>(null);
 
   /* Crates */
   const [trackCrates, setTrackCrates]     = useState<Crate[]>([]);
@@ -51,6 +56,13 @@ export default function TrackDetailPage() {
       })
       .catch((e: Error) => { setError(e.message); setTrack(null); });
   }, [id, user]);
+
+  /* Load set origin once track is known */
+  const trackSetId = track?.setId ?? null;
+  useEffect(() => {
+    if (!trackSetId) return;
+    getSetById(trackSetId).then(setOriginSet).catch(() => {});
+  }, [trackSetId]);
 
   /* Scroll lock for any sheet */
   useEffect(() => {
@@ -342,6 +354,56 @@ export default function TrackDetailPage() {
             <p className="text-[13px] leading-[1.65]" style={{ color: "var(--t2)" }}>
               {track.notes}
             </p>
+          </div>
+        )}
+
+        {/* From set */}
+        {track.setId && originSet && (
+          <div className="px-5 sm:px-8 py-[14px]"
+            style={{ borderBottom: "0.5px solid var(--rule)" }}>
+            <span className="text-[10px] tracking-[0.12em] uppercase block mb-[10px]"
+              style={{ color: "var(--t4)" }}>From set</span>
+            <div className="flex items-center gap-2.5">
+              {originSet.coverUrl ? (
+                <img src={originSet.coverUrl} alt=""
+                  className="shrink-0 rounded-[4px] object-cover"
+                  style={{ width: 28, height: 28, border: "0.5px solid var(--rule2)" }} />
+              ) : (
+                <div className="shrink-0 w-7 h-7 rounded-[4px] flex items-center justify-center"
+                  style={{ background: "var(--bg4)", border: "0.5px solid var(--rule2)" }}>
+                  <SmallWaveIcon />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium truncate" style={{ color: "var(--t1)" }}>
+                  {originSet.title}
+                </p>
+                {originSet.platform && (
+                  <p className="text-[11px]" style={{ color: "var(--teal)" }}>{originSet.platform}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-[10px] flex-wrap">
+              <Link
+                href={`/sets/${originSet.id}`}
+                className="flex items-center gap-[5px] text-[11px] rounded-[6px] px-[10px] py-[5px]"
+                style={{ color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.3)", background: "transparent" }}
+              >
+                Open set →
+              </Link>
+              {hasTs && originSet.sourceUrl && (
+                <a
+                  href={buildTimestampUrl(originSet.sourceUrl, track.sourceTimestamp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-[5px] text-[11px] rounded-[6px] px-[10px] py-[5px]"
+                  style={{ color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.3)", background: "transparent" }}
+                >
+                  <TimestampIcon />
+                  Play from {formatTimestamp(track.sourceTimestamp!)}
+                </a>
+              )}
+            </div>
           </div>
         )}
 
@@ -873,6 +935,18 @@ function ArrowLeft() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+function SmallWaveIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.4} style={{ color: "var(--t4)" }}>
+      <rect x="3"  y="14" width="2.5" height="6"  rx="1.25" />
+      <rect x="8"  y="9"  width="2.5" height="11" rx="1.25" />
+      <rect x="13" y="5"  width="2.5" height="15" rx="1.25" />
+      <rect x="18" y="11" width="2.5" height="8"  rx="1.25" />
     </svg>
   );
 }
