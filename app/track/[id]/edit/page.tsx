@@ -25,6 +25,9 @@ export default function EditTrackPage() {
   const [form, setForm]                       = useState<TrackFormState>(EMPTY_TRACK_FORM);
   const [storedTimestamp, setStoredTimestamp] = useState<number | null>(null);
   const [tsInput, setTsInput]               = useState("");
+  const [tsEndInput, setTsEndInput]         = useState("");
+  const [videoAuthor, setVideoAuthor]       = useState("");
+  const [trackIdHint, setTrackIdHint]       = useState("");
   const [rating, setRating]                   = useState<number | null>(null);
   const [saving, setSaving]                   = useState(false);
   const [error, setError]                     = useState<string | null>(null);
@@ -43,6 +46,9 @@ export default function EditTrackPage() {
         setRating(t.rating);
         setStoredTimestamp(t.sourceTimestamp);
         if (t.sourceTimestamp) setTsInput(formatTimestamp(t.sourceTimestamp));
+        if (t.timestampEnd)    setTsEndInput(formatTimestamp(t.timestampEnd));
+        setVideoAuthor(t.videoAuthor);
+        setTrackIdHint(t.trackIdHint);
         setForm({
           title:    t.title,
           artist:   t.artist,
@@ -87,9 +93,9 @@ export default function EditTrackPage() {
         status:          form.status,
         notes:           form.notes,
         sourceTimestamp: finalTimestamp,
-        timestampEnd:    track!.timestampEnd,
-        videoAuthor:     track!.videoAuthor,
-        trackIdHint:     track!.trackIdHint,
+        timestampEnd:    parseManualTimestamp(tsEndInput) ?? track!.timestampEnd,
+        videoAuthor:     videoAuthor.trim(),
+        trackIdHint:     trackIdHint.trim(),
       });
       await syncTrackCrates(id, selectedCrateIds, initialCrateIds);
       router.push(`/track/${id}`);
@@ -125,18 +131,18 @@ export default function EditTrackPage() {
         <Link
           href={`/track/${id}`}
           className="flex items-center gap-2 text-[13px] transition-colors"
-          style={{ color: "var(--teal)" }}
+          style={{ color: isIds ? "var(--amber)" : "var(--teal)" }}
         >
           <ArrowLeft />
-          Track detail
+          {isIds ? "ID detail" : "Track detail"}
         </Link>
       </div>
 
       {/* ── Page title ───────────────────────────────────────────── */}
       <div className="px-5 sm:px-8 pb-5">
         <h2 className="text-[22px] font-medium tracking-[-0.03em]"
-          style={{ color: "var(--t1)" }}>
-          Edit track
+          style={{ color: isIds ? "var(--amber)" : "var(--t1)" }}>
+          {isIds ? "Edit ID" : "Edit track"}
         </h2>
         {(track.title || track.artist) && (
           <p className="text-[13px] mt-[3px]" style={{ color: "var(--t3)" }}>
@@ -221,7 +227,7 @@ export default function EditTrackPage() {
               className="form-input"
             />
           </FormRow>
-          <FormRow label="Timestamp" last>
+          <FormRow label="Timestamp" last={!isIds}>
             <input
               type="text"
               inputMode="numeric"
@@ -232,7 +238,44 @@ export default function EditTrackPage() {
               style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
             />
           </FormRow>
+          {isIds && (
+            <FormRow label="Fin" last>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Optionnel — 15:20"
+                value={tsEndInput}
+                onChange={(e) => setTsEndInput(e.target.value)}
+                className="form-input"
+                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
+              />
+            </FormRow>
+          )}
         </FormSection>
+
+        {/* ── Section: ID info (IDs only) ──────────────────────────── */}
+        {isIds && (
+          <FormSection label="ID info">
+            <FormRow label="Auteur vidéo">
+              <input
+                type="text"
+                placeholder="Nom du compte, DJ, label…"
+                value={videoAuthor}
+                onChange={(e) => setVideoAuthor(e.target.value)}
+                className="form-input"
+              />
+            </FormRow>
+            <FormRow label="Track ID" last>
+              <input
+                type="text"
+                placeholder="Indice, Shazam result…"
+                value={trackIdHint}
+                onChange={(e) => setTrackIdHint(e.target.value)}
+                className="form-input"
+              />
+            </FormRow>
+          </FormSection>
+        )}
 
         {/* ── Section: Tags ────────────────────────────────────────── */}
         <FormSection label="Tags">
