@@ -18,11 +18,21 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B ✅ 3A ✅. Prochain : Sprint 3B (Spotify/Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B ✅ 3A ✅ Bugfix-Media ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
 
 ---
 
 ## Prochaine tâche recommandée : Sprint 3B ou FEAT-SC-TS
+
+**Bugfix Media Metadata — terminé ✅**
+
+Ce qui est fait :
+- `fetchBandcamp` : ajout `BROWSER_UA` sur oEmbed (était bloqué) + fallback HTML avec parser `", by "` pour le format Bandcamp
+- `fetchSpotify` : nouveau fetcher, scrape `og:title` (nom du track), parse artiste depuis `<title>` via `/ by ([^|]+?)\s*\|\s*Spotify/i`
+- `detectPlatform` : Spotify (`open.spotify.com`) ajouté
+- `PLATFORMS` : `"Spotify"` ajouté entre SoundCloud et Bandcamp
+- `TrackEmbed` + `SetEmbed` : iframe Spotify (152px pour track/episode, 352px pour album/playlist)
+- `PlatformLinkCard` + link card SetEmbed : Spotify (`#1DB954`, badge `sp`) pour les pages artiste sans embed
 
 **Sprint 3A — Rich Media terminé ✅**
 
@@ -34,7 +44,7 @@ Ce qui est fait :
 - YouTube et SoundCloud inchangés
 
 Choix suivants :
-- **Sprint 3B** : Spotify embed + Apple Music embed (complexité M–L, risque API)
+- **Sprint 3B** : Apple Music embed (Spotify fait, Apple Music reste — complexité M)
 - **FEAT-SC-TS** : SoundCloud timestamp natif via SC Widget JS API (complexité L)
 
 ---
@@ -71,7 +81,8 @@ Choix suivants :
 | Crates — création, édition, sous-crates, 24 couleurs | ✅ |
 | Embed YouTube (avec timestamp natif) | ✅ |
 | Embed SoundCloud (widget, hash strippé, fallback link) | ✅ |
-| Metadata auto-fetch (YouTube, SC, TikTok, IG, Discogs) | ✅ |
+| Metadata auto-fetch (YouTube, SC, Spotify, TikTok, IG, Bandcamp, Discogs) | ✅ |
+| Embed Spotify (track 152px, album/playlist 352px) | ✅ |
 | Navigation mobile Library ↔ IDs ↔ Crates | ✅ |
 | Search dans Library et IDs | ✅ |
 | Filtre par crate dans Library et IDs | ✅ |
@@ -95,7 +106,7 @@ Aucun. BUG-02 corrigé (2026-05-12).
 - PWA manifest + Add to Home Screen (Sprint 6)
 - Partage public (Sprint 6)
 - Embed SoundCloud avec timestamp (Sprint 2B)
-- Support Spotify / Apple Music / Bandcamp (Sprint 3)
+- Support Apple Music (Sprint 3B — Spotify fait ✅)
 - IA metadata / résumé (Sprint 4)
 
 ---
