@@ -90,35 +90,6 @@ export default function CratesPage() {
       ) : (
         <div style={{ borderTop: "0.5px solid var(--rule)" }}>
 
-          {/* ── IDs Needed — pinned virtual crate ────────────────── */}
-          <Link
-            href="/ids"
-            className="flex items-center gap-4 px-5 sm:px-8 py-[14px] transition-opacity active:opacity-70"
-            style={{ borderBottom: "0.5px solid var(--rule)", background: "var(--amber-soft)" }}
-          >
-            <div
-              className="w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: "rgba(201,162,74,0.18)", border: "0.5px solid var(--amber-rule)" }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
-                style={{ color: "var(--amber)" }}>
-                <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-medium" style={{ color: "var(--amber)" }}>
-                IDs Needed
-              </p>
-              <p className="text-[11px] mt-[2px]" style={{ color: "rgba(201,162,74,0.55)" }}>
-                Tracks waiting to be identified
-              </p>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--amber)", opacity: 0.6 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-            </svg>
-          </Link>
-
           {/* ── Crates list ──────────────────────────────────────── */}
           {topLevel.length === 0 ? (
             <EmptyState />

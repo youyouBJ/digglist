@@ -42,14 +42,22 @@ export const CRATE_COLORS = [
   "#3d9e87", "#2e8a74", "#4dbfaa",
   // Greens
   "#6ac97d", "#4ab865", "#85d498",
+  // Sage & olive
+  "#7a9e4a", "#668a38", "#90b45c",
   // Sky & cyan
   "#4a9ec9", "#3a8ab8", "#62b0d8",
-  // Blues & slate
+  // Blues
   "#5272a0", "#3a5a9a", "#7090b8",
+  // Navy & midnight
+  "#2e4a8a", "#243b73", "#3e5aa0",
+  // Slate & cool gray
+  "#5a7080", "#4a5e6e", "#6e8494",
   // Purples
   "#8b6fd4", "#7058c8", "#a882e0",
   // Roses
   "#c94a7d", "#b83870", "#d85e90",
+  // Crimson
+  "#c94a4a", "#b83838", "#d86262",
   // Ambers
   "#c9a24a", "#b88c38", "#d8b45e",
   // Terracotta
