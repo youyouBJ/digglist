@@ -281,6 +281,8 @@ create policy "Public read by share_token — crates"
 | 2B | Sets System — Flow (sans SC timestamp) | ✅ |
 | Sets+ | Sets Enrichment — artist, party, setDate, moments | ✅ |
 | UX+ | Add hub (4 actions) + Library crate dots inline titre | ✅ |
+| Crates UX | Retrait IDs Needed + palette 36 couleurs | ✅ |
+| Crates Patterns | Motifs/patterns sur crates | ⏳ SQL en attente |
 | 3A | Rich Media — Bandcamp + TikTok | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | Spotify ✅ / Apple Music À faire |
 | 4 | Smart Metadata / AI | À faire |

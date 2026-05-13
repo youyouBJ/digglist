@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅. Prochain : Patterns crates (SQL confirmé ?) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -33,6 +33,22 @@ Ce qui est fait :
 - `PLATFORMS` : `"Spotify"` ajouté entre SoundCloud et Bandcamp
 - `TrackEmbed` + `SetEmbed` : iframe Spotify (152px pour track/episode, 352px pour album/playlist)
 - `PlatformLinkCard` + link card SetEmbed : Spotify (`#1DB954`, badge `sp`) pour les pages artiste sans embed
+
+**Crates UX cleanup — terminé ✅**
+
+Ce qui est fait :
+- `app/crates/page.tsx` : retrait de l'entrée "IDs Needed" (n'est pas une crate, redirige vers /ids qui a sa propre nav)
+- `lib/constants.ts` : palette étendue de 24 à 36 couleurs — 4 nouvelles familles : Sage/olive, Navy/midnight, Slate/cool-gray, Crimson
+
+**Patterns crates — en attente SQL**
+
+SQL à soumettre dans Supabase Dashboard :
+```sql
+alter table public.crates
+  add column pattern text not null default '';
+```
+Valeurs prévues : `""` (aucun), `"dots"`, `"lines"`, `"grid"`, `"diagonal"`, `"rings"`, `"cross"`.
+Une fois confirmé, implémenter : selector dans New/Edit Crate, rendu pattern sur swatches/rows/pills, `CrateRow` et `Crate` type mis à jour.
 
 **Sprint UX Hub + Library lisibilité — terminé ✅**
 
