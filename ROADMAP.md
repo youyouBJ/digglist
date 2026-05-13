@@ -14,7 +14,7 @@
 | Sets+ | Sets — Enrichment (artist, party, setDate, moments) | 1 | ✅ |
 | 3A | Rich Media — Bandcamp + TikTok preview | 1 | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | 2–3 | Spotify ✅ / Apple Music À faire |
-| 4 | Smart Metadata / AI | 2 | Infra ✅ Add Track ✅ Bugfix-AddTrack ✅ — IDs/QA À faire |
+| 4 | Smart Metadata / AI | 2 | Infra ✅ Add Track ✅ Bugfix-AddTrack ✅ Bugfix2 ✅ — IDs/QA À faire |
 | 5 | Crates Evolution | 1–2 | À faire |
 | 6 | Polish V1 | 2–3 | À faire |
 

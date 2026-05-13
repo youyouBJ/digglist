@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅ Bugfix-AddTrack ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅ Bugfix-AddTrack ✅ Bugfix2-AddTrack ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -100,6 +100,14 @@ Bugs remontés du test iPhone réels, tous corrigés :
 - `fetchInstagram` : scraping bloqué par login wall → fallback sur l'extraction du username depuis l'URL
 - Bouton `✦ AI suggestions` : toujours visible (plus caché derrière `hasAiContext`), style teal pour la visibilité, désactivé si form vide
 - `FormSection` : prop `collapsible` ajoutée — Details / Rating / Notes / Crates ouverts par défaut avec chevron pour replier
+
+**Bugfix2 Add Track + AI — terminé ✅ (2026-05-13)**
+
+- BottomNav "Add a track" pointait vers `/quick-add` (formulaire rapide avec "Add details →") → corrigé, pointe maintenant vers `/add-track` (formulaire complet)
+- `suggest-metadata` : extraction JSON par regex `/{[\s\S]*}/` au lieu de strip fences → robuste même si Claude ajoute du texte en préambule ; retourne résultat vide (0% confiance) au lieu de "Could not parse AI response"
+- Output JSON étendu : `label`, `videoAuthor` ajoutés à `artist/title/genre/mood/summary`
+- `AiSuggestions` type + `AiField` étendus, `handleApplyAll` applique `label` + `videoAuthor`, `onApplyField` route `videoAuthor` vers `setVideoAuthor`
+- `AiPanel` : nouvelles lignes Label et Video author, colonne label élargie
 
 **Prochaine étape : AI-META-IDS** — même intégration dans `ids/new/page.tsx`
 
