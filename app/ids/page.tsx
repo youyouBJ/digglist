@@ -395,10 +395,15 @@ function IdRow({
               )}
               {hasCrates && (
                 <span className="flex items-center gap-[4px]">
-                  {trackCrates.slice(0, 4).map((c) => (
+                  {trackCrates.slice(0, 3).map((c) => (
                     <span key={c.id} className="w-[5px] h-[5px] rounded-full shrink-0"
-                      style={{ background: c.color }} />
+                      style={{ background: c.color }} title={c.name} />
                   ))}
+                  {trackCrates.length > 3 && (
+                    <span className="text-[9px] leading-none" style={{ color: "var(--amber)", opacity: 0.5 }}>
+                      +{trackCrates.length - 3}
+                    </span>
+                  )}
                 </span>
               )}
             </div>

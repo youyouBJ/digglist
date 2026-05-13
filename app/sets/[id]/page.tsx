@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getSetById, deleteSet, getSetTracks, type MixSet } from "@/lib/supabase-sets";
 import { createTrack, type Track } from "@/lib/supabase-tracks";
+import { getCrates, getTrackCrateMap, type Crate } from "@/lib/supabase-crates";
 import { formatTimestamp, buildTimestampUrl, parseManualTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
@@ -19,6 +20,8 @@ export default function SetDetailPage() {
   const [set, setSet]         = useState<MixSet | null | undefined>(undefined);
   const [moments, setMoments] = useState<Track[]>([]);
   const [error, setError]     = useState<string | null>(null);
+  const [crates, setCrates]             = useState<Crate[]>([]);
+  const [trackCrateMap, setTrackCrateMap] = useState<Record<string, string[]>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]           = useState(false);
 
@@ -34,8 +37,8 @@ export default function SetDetailPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getSetById(id), getSetTracks(id)])
-      .then(([s, m]) => { setSet(s); setMoments(m); })
+    Promise.all([getSetById(id), getSetTracks(id), getCrates(), getTrackCrateMap()])
+      .then(([s, m, c, tcm]) => { setSet(s); setMoments(m); setCrates(c); setTrackCrateMap(tcm); })
       .catch((e: Error) => { setError(e.message); setSet(null); });
   }, [id, user]);
 
@@ -198,13 +201,19 @@ export default function SetDetailPage() {
             {trackMoments.length > 0 && (
               <>
                 <SectionHeader label="Tracks" count={trackMoments.length} />
-                {trackMoments.map((m) => <MomentRow key={m.id} track={m} set={set} />)}
+                {trackMoments.map((m) => (
+                  <MomentRow key={m.id} track={m} set={set}
+                    trackCrates={crates.filter((c) => (trackCrateMap[m.id] ?? []).includes(c.id))} />
+                ))}
               </>
             )}
             {idMoments.length > 0 && (
               <>
                 <SectionHeader label="IDs" count={idMoments.length} amber />
-                {idMoments.map((m) => <MomentRow key={m.id} track={m} set={set} />)}
+                {idMoments.map((m) => (
+                  <MomentRow key={m.id} track={m} set={set}
+                    trackCrates={crates.filter((c) => (trackCrateMap[m.id] ?? []).includes(c.id))} />
+                ))}
               </>
             )}
           </>
@@ -452,7 +461,7 @@ function SectionHeader({ label, count, amber }: { label: string; count: number; 
 
 /* ─── Moment row ─────────────────────────────────────────────────────────── */
 
-function MomentRow({ track, set }: { track: Track; set: MixSet }) {
+function MomentRow({ track, set, trackCrates }: { track: Track; set: MixSet; trackCrates: Crate[] }) {
   const isId      = track.recordType === "id_needed";
   const hasTs     = track.sourceTimestamp !== null && track.sourceTimestamp !== undefined;
   const tsLink    = hasTs && set.sourceUrl
@@ -502,6 +511,19 @@ function MomentRow({ track, set }: { track: Track; set: MixSet }) {
                 {track.notes}
               </p>
             )}
+            {trackCrates.length > 0 && (
+              <span className="flex items-center gap-[4px] mt-[4px]">
+                {trackCrates.slice(0, 3).map((c) => (
+                  <span key={c.id} className="w-[5px] h-[5px] rounded-full shrink-0"
+                    style={{ background: c.color }} title={c.name} />
+                ))}
+                {trackCrates.length > 3 && (
+                  <span className="text-[9px] leading-none" style={{ color: "var(--amber)", opacity: 0.5 }}>
+                    +{trackCrates.length - 3}
+                  </span>
+                )}
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -512,6 +534,19 @@ function MomentRow({ track, set }: { track: Track; set: MixSet }) {
               <p className="text-[11px] truncate mt-[1px]" style={{ color: "var(--t3)" }}>
                 {track.artist}
               </p>
+            )}
+            {trackCrates.length > 0 && (
+              <span className="flex items-center gap-[4px] mt-[4px]">
+                {trackCrates.slice(0, 3).map((c) => (
+                  <span key={c.id} className="w-[5px] h-[5px] rounded-full shrink-0"
+                    style={{ background: c.color }} title={c.name} />
+                ))}
+                {trackCrates.length > 3 && (
+                  <span className="text-[9px] leading-none" style={{ color: "var(--t4)" }}>
+                    +{trackCrates.length - 3}
+                  </span>
+                )}
+              </span>
             )}
           </>
         )}
