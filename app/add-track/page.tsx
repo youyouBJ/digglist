@@ -13,6 +13,12 @@ import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
 import { getSets } from "@/lib/supabase-sets";
 
+type AiSuggestions = {
+  artist: string; title: string; genre: string;
+  mood: string; summary: string; confidence: number;
+};
+type AiField = "artist" | "title" | "genre" | "mood";
+
 export default function AddTrackPage() {
   const user = useRequireAuth();
 
@@ -24,6 +30,10 @@ export default function AddTrackPage() {
   const [fetching, setFetching]         = useState(false);
   const [fetchPhase, setFetchPhase]     = useState<"idle" | "success" | "error">("idle");
   const [fetchMsg, setFetchMsg]         = useState("");
+
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError]     = useState<string | null>(null);
+  const [aiResult, setAiResult]   = useState<AiSuggestions | null>(null);
 
   const [rating, setRating]                     = useState<number | null>(null);
   const [videoAuthor, setVideoAuthor]           = useState("");
@@ -60,6 +70,47 @@ export default function AddTrackPage() {
 
   function set(field: keyof TrackFormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  const hasAiContext = !!(form.title.trim() || form.artist.trim() || form.notes.trim() || form.url.trim());
+
+  async function handleAiSuggest() {
+    setAiLoading(true);
+    setAiError(null);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/suggest-metadata", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          platform: form.platform,
+          title:    form.title,
+          artist:   form.artist,
+          url:      form.url,
+          notes:    form.notes,
+          author:   videoAuthor,
+        }),
+      });
+      const data = (await res.json()) as AiSuggestions & { error?: string };
+      if (data.error) {
+        setAiError(data.error === "AI unavailable" ? "AI suggestions are not configured." : data.error);
+      } else {
+        setAiResult(data);
+      }
+    } catch {
+      setAiError("Could not reach AI.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function handleApplyAll() {
+    if (!aiResult) return;
+    if (aiResult.artist) set("artist", aiResult.artist);
+    if (aiResult.title)  set("title",  aiResult.title);
+    if (aiResult.genre)  set("genre",  aiResult.genre);
+    if (aiResult.mood)   set("mood",   aiResult.mood);
+    setAiResult(null);
   }
 
   function handleSetSelect(id: string) {
@@ -332,6 +383,40 @@ export default function AddTrackPage() {
             </FormRow>
           </FormSection>
 
+          {/* ── AI suggestions ───────────────────────────────────── */}
+          {hasAiContext && (
+            <div style={{ borderTop: "0.5px solid var(--rule)" }}>
+              {aiResult ? (
+                <AiPanel
+                  result={aiResult}
+                  onApplyField={(field, value) => set(field as keyof TrackFormState, value)}
+                  onApplyAll={handleApplyAll}
+                  onDismiss={() => { setAiResult(null); setAiError(null); }}
+                />
+              ) : (
+                <div className="px-5 sm:px-8 py-[12px] flex items-center justify-between">
+                  <span className="text-[12px]" style={{ color: "var(--t4)" }}>
+                    Confusing title or artist?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAiSuggest}
+                    disabled={aiLoading}
+                    className="flex items-center gap-1.5 h-8 px-3.5 rounded-[7px] text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
+                  >
+                    {aiLoading ? "Analyzing…" : "✦ AI suggestions"}
+                  </button>
+                </div>
+              )}
+              {aiError && !aiResult && (
+                <p className="px-5 sm:px-8 pb-[12px] text-[12px]" style={{ color: "#f87171" }}>
+                  {aiError}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* ── Details ──────────────────────────────────────────── */}
           <FormSection label="Details">
             <FormRow label="Label">
@@ -560,5 +645,120 @@ function CheckIcon() {
       stroke="currentColor" strokeWidth={1.5} style={{ color: "var(--teal)" }}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
+  );
+}
+
+/* ─── AI Suggestions Panel ───────────────────────────────────────────────── */
+
+function AiPanel({
+  result,
+  onApplyField,
+  onApplyAll,
+  onDismiss,
+}: {
+  result: AiSuggestions;
+  onApplyField: (field: AiField, value: string) => void;
+  onApplyAll: () => void;
+  onDismiss: () => void;
+}) {
+  const isLow = result.confidence < 0.5;
+  const pct   = Math.round(result.confidence * 100);
+
+  const rows = [
+    { field: "artist" as AiField, label: "Artist", value: result.artist },
+    { field: "title"  as AiField, label: "Title",  value: result.title  },
+    { field: "genre"  as AiField, label: "Genre",  value: result.genre  },
+    { field: "mood"   as AiField, label: "Mood",   value: result.mood   },
+  ].filter((r) => r.value.trim() !== "");
+
+  const noSuggestions = rows.length === 0 && !result.summary;
+
+  return (
+    <div
+      className="mx-5 sm:mx-8 my-3 rounded-[10px] overflow-hidden"
+      style={{ border: `0.5px solid ${isLow ? "var(--amber-rule)" : "var(--rule2)"}`, background: "var(--bg3)" }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-[10px]"
+        style={{ borderBottom: "0.5px solid var(--rule)" }}>
+        <span className="text-[11px] font-medium tracking-[0.04em]"
+          style={{ color: "var(--teal)" }}>
+          ✦ AI suggestions
+        </span>
+        <span className="text-[11px]" style={{ color: isLow ? "var(--amber)" : "var(--t3)" }}>
+          {pct}% confidence
+        </span>
+      </div>
+
+      {/* Low-confidence warning */}
+      {isLow && (
+        <p className="px-4 py-[8px] text-[11px] leading-[1.5]"
+          style={{ color: "var(--amber)", borderBottom: "0.5px solid var(--amber-rule)", background: "var(--amber-soft)" }}>
+          Low confidence — review carefully before applying.
+        </p>
+      )}
+
+      {/* No suggestions */}
+      {noSuggestions && (
+        <p className="px-4 py-3 text-[12px]" style={{ color: "var(--t3)" }}>
+          Couldn't extract metadata from this content.
+        </p>
+      )}
+
+      {/* Field rows */}
+      {rows.map((r, i) => (
+        <div
+          key={r.field}
+          className="flex items-center gap-3 px-4 py-[10px]"
+          style={{ borderBottom: i < rows.length - 1 ? "0.5px solid var(--rule)" : undefined }}
+        >
+          <span className="text-[11px] w-[42px] shrink-0" style={{ color: "var(--t4)" }}>{r.label}</span>
+          <span className="flex-1 text-[13px] min-w-0 truncate" style={{ color: "var(--t1)" }}>{r.value}</span>
+          <button
+            type="button"
+            onClick={() => onApplyField(r.field, r.value)}
+            className="shrink-0 text-[11px] font-medium h-[26px] px-[10px] rounded-[5px]"
+            style={{ background: "var(--bg4)", color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.25)" }}
+          >
+            Apply
+          </button>
+        </div>
+      ))}
+
+      {/* Summary */}
+      {result.summary && (
+        <p
+          className="px-4 py-[10px] text-[11px] leading-[1.6] italic"
+          style={{ color: "var(--t3)", borderTop: rows.length > 0 ? "0.5px solid var(--rule)" : undefined }}
+        >
+          "{result.summary}"
+        </p>
+      )}
+
+      {/* Actions */}
+      <div
+        className="flex items-center gap-2 px-4 py-[10px]"
+        style={{ borderTop: "0.5px solid var(--rule)" }}
+      >
+        {!noSuggestions && rows.length > 0 && (
+          <button
+            type="button"
+            onClick={onApplyAll}
+            className="flex-1 h-8 rounded-[7px] text-[12px] font-medium"
+            style={{ background: "rgba(61,158,135,0.08)", color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.20)" }}
+          >
+            Apply all
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="h-8 px-4 rounded-[7px] text-[12px]"
+          style={{ color: "var(--t4)" }}
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
   );
 }

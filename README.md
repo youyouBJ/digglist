@@ -135,7 +135,9 @@ npm run lint     # ESLint
 - Route `POST /api/suggest-metadata` — server-side uniquement, modèle `claude-haiku-4-5-20251001`
 - Input : `platform`, `title`, `artist`, `description`, `caption`, `author`, `url`, `notes`
 - Output : `artist`, `title`, `genre`, `mood`, `summary`, `confidence` (0.0–1.0)
-- Déclencheur : bouton `✦ AI suggestions` (jamais auto), UI à venir dans les formulaires
+- Bouton `✦ AI suggestions` dans **Add Track** — visible dès qu'un champ est rempli
+- Panel inline : Apply par champ ou Apply all, warning si confidence < 50%
+- Jamais auto-call, jamais d'écrasement sans action explicite
 - Fallback propre si `ANTHROPIC_API_KEY` absent → `{"error":"AI unavailable"}`, pas de crash
 
 ### Crates

@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅. Prochain : AI-META-ADD (bouton UI dans add-track/ids/new) ou Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -81,7 +81,18 @@ curl -s -X POST http://localhost:3000/api/suggest-metadata \
   -d '{}'
 ```
 
-**Prochaine étape : AI-META-ADD** — bouton `✦ AI suggestions` + panel inline dans `add-track/page.tsx`
+**AI-META-ADD — terminé ✅**
+
+Ce qui est fait dans `app/add-track/page.tsx` :
+- Types `AiSuggestions` + `AiField` définis localement
+- État `aiLoading / aiError / aiResult` (React state, pas de DB)
+- `handleAiSuggest` : POST `/api/suggest-metadata` avec `platform, title, artist, url, notes, author`
+- `handleApplyAll` : applique les champs non-vides + ferme le panel
+- Section AI dans le form (entre Source et Details) : visible si au moins un champ rempli
+- Bouton `✦ AI suggestions` → loading `"Analyzing…"` → panel ou erreur inline
+- Composant `AiPanel` : header confidence, warning amber si < 50%, rows Apply par champ, résumé italique, Apply all + Dismiss
+
+**Prochaine étape : AI-META-IDS** — même intégration dans `ids/new/page.tsx`
 
 Architecture décidée 2026-05-13 :
 - Route serveur : `app/api/suggest-metadata/route.ts` (POST, server-side, jamais exposé côté client)
