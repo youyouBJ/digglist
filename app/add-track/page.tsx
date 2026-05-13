@@ -384,41 +384,39 @@ export default function AddTrackPage() {
           </FormSection>
 
           {/* ── AI suggestions ───────────────────────────────────── */}
-          {hasAiContext && (
-            <div style={{ borderTop: "0.5px solid var(--rule)" }}>
-              {aiResult ? (
-                <AiPanel
-                  result={aiResult}
-                  onApplyField={(field, value) => set(field as keyof TrackFormState, value)}
-                  onApplyAll={handleApplyAll}
-                  onDismiss={() => { setAiResult(null); setAiError(null); }}
-                />
-              ) : (
-                <div className="px-5 sm:px-8 py-[12px] flex items-center justify-between">
-                  <span className="text-[12px]" style={{ color: "var(--t4)" }}>
-                    Confusing title or artist?
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleAiSuggest}
-                    disabled={aiLoading}
-                    className="flex items-center gap-1.5 h-8 px-3.5 rounded-[7px] text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: "var(--bg3)", color: "var(--t2)", border: "0.5px solid var(--rule2)" }}
-                  >
-                    {aiLoading ? "Analyzing…" : "✦ AI suggestions"}
-                  </button>
-                </div>
-              )}
-              {aiError && !aiResult && (
-                <p className="px-5 sm:px-8 pb-[12px] text-[12px]" style={{ color: "#f87171" }}>
-                  {aiError}
-                </p>
-              )}
-            </div>
-          )}
+          <div style={{ borderTop: "0.5px solid var(--rule)" }}>
+            {aiResult ? (
+              <AiPanel
+                result={aiResult}
+                onApplyField={(field, value) => set(field as keyof TrackFormState, value)}
+                onApplyAll={handleApplyAll}
+                onDismiss={() => { setAiResult(null); setAiError(null); }}
+              />
+            ) : (
+              <div className="px-5 sm:px-8 py-[12px] flex items-center justify-between">
+                <span className="text-[12px] font-medium" style={{ color: "var(--teal)" }}>
+                  ✦ AI suggestions
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAiSuggest}
+                  disabled={aiLoading || !hasAiContext}
+                  className="flex items-center gap-1.5 h-8 px-3.5 rounded-[7px] text-[12px] font-medium disabled:opacity-35"
+                  style={{ background: "rgba(61,158,135,0.08)", color: "var(--teal)", border: "0.5px solid rgba(61,158,135,0.25)" }}
+                >
+                  {aiLoading ? "Analyzing…" : "Suggest metadata"}
+                </button>
+              </div>
+            )}
+            {aiError && !aiResult && (
+              <p className="px-5 sm:px-8 pb-[12px] text-[12px]" style={{ color: "#f87171" }}>
+                {aiError}
+              </p>
+            )}
+          </div>
 
           {/* ── Details ──────────────────────────────────────────── */}
-          <FormSection label="Details">
+          <FormSection label="Details" collapsible>
             <FormRow label="Label">
               <input
                 type="text"
@@ -449,14 +447,14 @@ export default function AddTrackPage() {
           </FormSection>
 
           {/* ── Rating ───────────────────────────────────────────── */}
-          <FormSection label="Rating">
+          <FormSection label="Rating" collapsible>
             <div className="px-5 sm:px-8 py-4">
               <StarRating value={rating} onChange={setRating} />
             </div>
           </FormSection>
 
           {/* ── Notes ────────────────────────────────────────────── */}
-          <FormSection label="Notes">
+          <FormSection label="Notes" collapsible>
             <div className="px-5 sm:px-8 py-4">
               <textarea
                 rows={3}
@@ -471,7 +469,7 @@ export default function AddTrackPage() {
 
           {/* ── Crates ───────────────────────────────────────────── */}
           {allCrates.length > 0 && (
-            <FormSection label="Crates">
+            <FormSection label="Crates" collapsible>
               <div className="px-5 sm:px-8 py-4 flex flex-wrap gap-2">
                 {allCrates.map((c) => {
                   const selected = selectedCrateIds.includes(c.id);
@@ -596,14 +594,33 @@ function StarRating({ value, onChange }: { value: number | null; onChange: (v: n
 
 /* ─── Form helpers ───────────────────────────────────────────────────────── */
 
-function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
+function FormSection({ label, children, collapsible }: {
+  label: string;
+  children: React.ReactNode;
+  collapsible?: boolean;
+}) {
+  const [open, setOpen] = useState(true);
   return (
     <div style={{ borderTop: "0.5px solid var(--rule)" }}>
-      <p className="px-5 sm:px-8 pt-[14px] pb-[6px] text-[10px] tracking-[0.12em] uppercase"
-        style={{ color: "var(--t4)" }}>
-        {label}
-      </p>
-      {children}
+      <div
+        className="px-5 sm:px-8 pt-[14px] pb-[6px] flex items-center justify-between"
+        onClick={collapsible ? () => setOpen((o) => !o) : undefined}
+        style={collapsible ? { cursor: "pointer" } : undefined}
+      >
+        <p className="text-[10px] tracking-[0.12em] uppercase" style={{ color: "var(--t4)" }}>
+          {label}
+        </p>
+        {collapsible && (
+          <svg
+            width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth={1.5}
+            style={{ color: "var(--t4)", transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </div>
+      {(!collapsible || open) && children}
     </div>
   );
 }

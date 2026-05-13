@@ -124,7 +124,10 @@ async function fetchYouTube(url: string): Promise<Meta | null> {
 async function fetchSoundCloud(url: string): Promise<Meta | null> {
   try {
     const oembed = `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-    const res    = await fetch(oembed, { signal: AbortSignal.timeout(6000) });
+    const res    = await fetch(oembed, {
+      headers: { "User-Agent": BROWSER_UA },
+      signal:  AbortSignal.timeout(6000),
+    });
     if (!res.ok) return null;
     const data = await res.json() as { title?: string; author_name?: string; thumbnail_url?: string };
     const { title, artist } = splitArtistTitle(data.title ?? "");
@@ -142,7 +145,11 @@ async function fetchTikTok(url: string): Promise<Meta | null> {
   try {
     const oembed = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
     const res    = await fetch(oembed, {
-      headers: { "User-Agent": BROWSER_UA },
+      headers: {
+        "User-Agent": BROWSER_UA,
+        "Referer":    "https://www.tiktok.com/",
+        "Accept":     "application/json",
+      },
       signal:  AbortSignal.timeout(6000),
     });
     if (!res.ok) return null;
@@ -164,19 +171,24 @@ async function fetchTikTok(url: string): Promise<Meta | null> {
 }
 
 async function fetchInstagram(url: string): Promise<Meta | null> {
-  const html = await fetchHtml(url);
-  if (!html) return null;
-  const image       = extractMeta(html, "og:image");
-  const description = extractMeta(html, "og:description");
-  const siteName    = extractMeta(html, "og:site_name");
-  const author      = extractMeta(html, "article:author") || siteName;
+  /* Instagram blocks server-side requests with a login wall.
+     Try HTML scraping first — on rare occasions it works.
+     Fall back to extracting the username from the URL path. */
+  const usernameMatch = url.match(/instagram\.com\/([A-Za-z0-9_.]+)/);
+  const username      = usernameMatch?.[1] ?? "";
 
-  return {
-    title:    "",
-    artist:   author,
-    imageUrl: image,
-    notes:    description,
-  };
+  const html = await fetchHtml(url);
+  if (html) {
+    const image       = extractMeta(html, "og:image");
+    const description = extractMeta(html, "og:description");
+    const siteName    = extractMeta(html, "og:site_name");
+    const author      = extractMeta(html, "article:author") || siteName;
+    if (image || description || author) {
+      return { title: "", artist: author || username, imageUrl: image, notes: description };
+    }
+  }
+
+  return username ? { title: "", artist: username, imageUrl: "", notes: "" } : null;
 }
 
 async function fetchBandcamp(url: string): Promise<Meta | null> {
