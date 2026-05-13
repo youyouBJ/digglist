@@ -12,7 +12,6 @@ import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
 import { getSets } from "@/lib/supabase-sets";
-import { extractTimestampFromUrl, formatTimestamp, parseManualTimestamp } from "@/lib/timestamp";
 
 export default function AddTrackPage() {
   const user = useRequireAuth();
@@ -25,9 +24,6 @@ export default function AddTrackPage() {
   const [fetching, setFetching]         = useState(false);
   const [fetchPhase, setFetchPhase]     = useState<"idle" | "success" | "error">("idle");
   const [fetchMsg, setFetchMsg]         = useState("");
-  const [sourceTimestamp, setTimestamp] = useState<number | null>(null);
-  const [tsInput, setTsInput]           = useState("");
-  const [tsEndInput, setTsEndInput]     = useState("");
 
   const [rating, setRating]                     = useState<number | null>(null);
   const [videoAuthor, setVideoAuthor]           = useState("");
@@ -49,9 +45,6 @@ export default function AddTrackPage() {
     if (!prefillUrl) return;
     const prefillPlatform = params.get("platform") ?? "";
     const prefillStatus   = params.get("status")   ?? "";
-    const tsStr           = params.get("ts");
-    const ts              = tsStr ? parseInt(tsStr, 10) : null;
-    setTimestamp(Number.isFinite(ts) && ts! > 0 ? ts : extractTimestampFromUrl(prefillUrl));
     setForm((prev) => ({
       ...prev,
       url:      prefillUrl,
@@ -98,7 +91,6 @@ export default function AddTrackPage() {
         imageUrl: data.imageUrl  || prev.imageUrl,
         notes:    data.notes    || prev.notes,
       }));
-      setTimestamp(data.timestamp ?? extractTimestampFromUrl(trimmed));
       setFetchPhase("success");
       setFetchMsg("Metadata imported.");
     } catch (err) {
@@ -127,8 +119,8 @@ export default function AddTrackPage() {
         mood:            form.mood,
         status:          form.status,
         notes:           form.notes,
-        sourceTimestamp: finalTs,
-        timestampEnd:    tsEndParsed,
+        sourceTimestamp: null,
+        timestampEnd:    null,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     "",
         setId:           selectedSetId,
@@ -147,20 +139,12 @@ export default function AddTrackPage() {
     setForm(EMPTY_TRACK_FORM);
     setFetchPhase("idle");
     setFetchMsg("");
-    setTimestamp(null);
-    setTsInput("");
-    setTsEndInput("");
     setError(null);
     setSelectedCrateIds([]);
     setSelectedSetId(null);
     setRating(null);
     setVideoAuthor("");
   }
-
-  const tsFromUrl    = sourceTimestamp ?? extractTimestampFromUrl(form.url);
-  const tsFromInput  = parseManualTimestamp(tsInput);
-  const tsEndParsed  = parseManualTimestamp(tsEndInput);
-  const finalTs      = tsFromInput ?? tsFromUrl;
 
   return (
     <main className="min-h-screen flex flex-col pb-24 sm:pb-6"
@@ -286,11 +270,6 @@ export default function AddTrackPage() {
                   );
                 })}
               </div>
-              {selectedSetId && finalTs === null && (
-                <p className="px-5 sm:px-8 pb-3 text-[11px]" style={{ color: "var(--amber)" }}>
-                  ⏱ Timestamp required when linking to a set
-                </p>
-              )}
             </FormSection>
           )}
 
@@ -331,46 +310,8 @@ export default function AddTrackPage() {
                 </p>
               )}
 
-              {tsFromUrl !== null && !tsFromInput && (
-                <p className="mt-1 text-[12px] font-medium"
-                  style={{ color: "var(--amber)", fontFamily: "var(--font-jb-mono, monospace)", fontFeatureSettings: '"tnum"' }}>
-                  ⏱ {formatTimestamp(tsFromUrl)} (auto)
-                </p>
-              )}
             </div>
 
-            <FormRow label="Début" required={!!selectedSetId}>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="12:43 ou 1:12:43"
-                value={tsInput}
-                onChange={(e) => setTsInput(e.target.value)}
-                className="form-input"
-                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
-              />
-              {tsFromInput !== null && (
-                <p className="text-[11px] mt-1" style={{ color: "var(--amber)" }}>
-                  ⏱ {formatTimestamp(tsFromInput)}
-                </p>
-              )}
-            </FormRow>
-            <FormRow label="Fin">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Optionnel — 15:20"
-                value={tsEndInput}
-                onChange={(e) => setTsEndInput(e.target.value)}
-                className="form-input"
-                style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
-              />
-              {tsEndParsed !== null && (
-                <p className="text-[11px] mt-1" style={{ color: "var(--amber)", opacity: 0.7 }}>
-                  ⏱ {formatTimestamp(tsEndParsed)}
-                </p>
-              )}
-            </FormRow>
             <FormRow label="Platform">
               <select
                 value={form.platform}
@@ -481,7 +422,7 @@ export default function AddTrackPage() {
           >
             <button
               type="submit"
-              disabled={saving || (selectedSetId !== null && finalTs === null)}
+              disabled={saving}
               className="flex-1 h-11 rounded-[10px] text-[13px] font-medium disabled:opacity-50"
               style={{ background: "var(--t1)", color: "var(--bg)" }}
             >

@@ -69,9 +69,13 @@ export async function createSet(input: {
   coverUrl:  string | null;
   notes:     string;
 }): Promise<MixSet> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("You must be logged in to create a set.");
+
   const { data, error } = await supabase
     .from("sets")
     .insert({
+      user_id:    user.id,
       title:      input.title,
       source_url: input.sourceUrl,
       platform:   input.platform,

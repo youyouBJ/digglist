@@ -13,11 +13,6 @@ import BottomNav from "@/app/components/BottomNav";
 import { supabase } from "@/lib/supabase";
 import { getSets } from "@/lib/supabase-sets";
 import type { MixSetWithCount } from "@/lib/types";
-import {
-  extractTimestampFromUrl,
-  formatTimestamp,
-  parseManualTimestamp,
-} from "@/lib/timestamp";
 
 const URL_RE = /^https?:\/\/.+\..+/;
 
@@ -36,9 +31,6 @@ export default function LogIdPage() {
   const [fetchMsg, setFetchMsg]     = useState("");
   const fetchTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* Timestamps */
-  const [tsInput, setTsInput]       = useState("");
-  const [tsEndInput, setTsEndInput] = useState("");
 
   /* ID fields */
   const [artist, setArtist]         = useState("");
@@ -70,8 +62,6 @@ export default function LogIdPage() {
   if (!user) return <PageLoader />;
 
   const urlValid = URL_RE.test(url.trim());
-  const tsStart  = parseManualTimestamp(tsInput) ?? (urlValid ? extractTimestampFromUrl(url.trim()) : null);
-  const tsEnd    = parseManualTimestamp(tsEndInput);
 
   /* Auto-fetch on URL change */
   function handleUrlChange(value: string) {
@@ -109,9 +99,6 @@ export default function LogIdPage() {
       if (data.notes)     setNotes((prev) => prev || data.notes);
       if ((PLATFORMS as readonly string[]).includes(data.platform)) setPlatform(data.platform);
 
-      const urlTs = extractTimestampFromUrl(rawUrl);
-      if (urlTs && !tsInput) setTsInput(formatTimestamp(urlTs));
-
       setFetchPhase("success");
       setFetchMsg("Source importée.");
     } catch (err) {
@@ -140,8 +127,8 @@ export default function LogIdPage() {
         mood:            "",
         status:          "IDs Needed",
         notes:           notes.trim(),
-        sourceTimestamp: tsStart,
-        timestampEnd:    tsEnd,
+        sourceTimestamp: null,
+        timestampEnd:    null,
         videoAuthor:     videoAuthor.trim(),
         trackIdHint:     trackIdHint.trim(),
         setId:           selectedSetId,
@@ -213,11 +200,6 @@ export default function LogIdPage() {
                 );
               })}
             </div>
-            {selectedSetId && !tsStart && (
-              <p className="px-5 sm:px-8 pb-3 text-[11px]" style={{ color: "var(--amber)" }}>
-                ⏱ Timestamp required when linking to a set
-              </p>
-            )}
           </FormSection>
         )}
 
@@ -274,41 +256,6 @@ export default function LogIdPage() {
           </FormRow>
         </FormSection>
 
-        {/* ── Section: Timestamps ──────────────────────────────────── */}
-        <FormSection label="Timestamps">
-          <FormRow label="Début" required={!!selectedSetId}>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="12:43 ou 1:12:43"
-              value={tsInput}
-              onChange={(e) => setTsInput(e.target.value)}
-              className="form-input"
-              style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
-            />
-            {tsStart !== null && (
-              <p className="text-[11px] mt-1 text-right" style={{ color: "var(--amber)" }}>
-                ⏱ {formatTimestamp(tsStart)}
-              </p>
-            )}
-          </FormRow>
-          <FormRow label="Fin" last>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="Optionnel — 15:20"
-              value={tsEndInput}
-              onChange={(e) => setTsEndInput(e.target.value)}
-              className="form-input"
-              style={{ fontFamily: "var(--font-jb-mono, monospace)" }}
-            />
-            {tsEnd !== null && (
-              <p className="text-[11px] mt-1 text-right" style={{ color: "var(--amber)", opacity: 0.7 }}>
-                ⏱ {formatTimestamp(tsEnd)}
-              </p>
-            )}
-          </FormRow>
-        </FormSection>
 
         {/* ── Section: ID Info ─────────────────────────────────────── */}
         <FormSection label="ID info">
@@ -381,7 +328,7 @@ export default function LogIdPage() {
           style={{ borderTop: "0.5px solid var(--rule)" }}>
           <button
             type="submit"
-            disabled={saving || (selectedSetId !== null && !tsStart)}
+            disabled={saving}
             className="flex-1 h-11 rounded-[10px] text-[13px] font-medium disabled:opacity-50"
             style={{ background: "var(--amber)", color: "#1a1000" }}
           >
