@@ -137,6 +137,7 @@ npm run lint     # ESLint
 - Output : `artist`, `title`, `label`, `genre`, `mood`, `videoAuthor`, `summary`, `confidence` (0.0–1.0)
 - Parsing robuste : extraction JSON par regex — pas d'erreur si Claude ajoute du texte en préambule
 - Bouton `✦ AI suggestions` dans **Add Track** — toujours visible, désactivé si form vide
+- Inférence contextuelle : genre/mood/summary inférés depuis URL, channel, plateforme même sans title/artist
 - Panel inline : Apply par champ ou Apply all, warning si confidence < 50%
 - Jamais auto-call, jamais d'écrasement sans action explicite
 - Fallback propre si `ANTHROPIC_API_KEY` absent → `{"error":"AI unavailable"}`, pas de crash

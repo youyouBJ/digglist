@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅ Bugfix-AddTrack ✅ Bugfix2-AddTrack ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅ Bugfix-AddTrack ✅ Bugfix2-AddTrack ✅ Bugfix3-AddTrack ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -100,6 +100,13 @@ Bugs remontés du test iPhone réels, tous corrigés :
 - `fetchInstagram` : scraping bloqué par login wall → fallback sur l'extraction du username depuis l'URL
 - Bouton `✦ AI suggestions` : toujours visible (plus caché derrière `hasAiContext`), style teal pour la visibilité, désactivé si form vide
 - `FormSection` : prop `collapsible` ajoutée — Details / Rating / Notes / Crates ouverts par défaut avec chevron pour replier
+
+**Bugfix3 Add Track + AI — terminé ✅ (2026-05-14)**
+
+- Add Track: section Set supprimée (état, imports, JSX, `setId: null`). Les tracks liés à un set doivent être créés depuis un set via Log from set.
+- `suggest-metadata`: prompt réécrit — genre/mood/summary désormais inférés depuis le contexte (URL, channel, plateforme, notes) même quand title/artist sont vides. artist/title restent strict (extraction uniquement). Confidence 0.1–0.3 pour contexte sparse au lieu de 0.
+- `suggest-metadata`: `label` ajouté au payload envoyé depuis `handleAiSuggest`
+- `suggest-metadata`: logs console temporaires pour debug (prompt + raw response, 300 chars)
 
 **Bugfix2 Add Track + AI — terminé ✅ (2026-05-13)**
 
