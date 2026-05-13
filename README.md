@@ -36,14 +36,26 @@ L'app est pensée **mobile-first**, usage principal : iPhone en club ou chez soi
 
 ## Variables d'environnement
 
-Fichier `.env.local` à la racine (jamais commité) :
+Copier `.env.example` → `.env.local` (jamais commité) et remplir les valeurs.
 
 ```env
+# Supabase — obligatoire
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+
+# Anthropic — optionnel (Sprint 4 : AI suggestions)
+ANTHROPIC_API_KEY=<clé>
 ```
 
-Ces valeurs se trouvent dans **Supabase Dashboard → Settings → Data API**.
+Les valeurs Supabase se trouvent dans **Supabase Dashboard → Settings → Data API**.
+
+### Note sur `ANTHROPIC_API_KEY`
+
+- Préfixe `NEXT_PUBLIC_` absent → **server-side uniquement**. La clé n'est jamais envoyée au bundle client.
+- Laisser vide ou absent = AI suggestions désactivées proprement (pas de crash).
+- Clé dispo sur [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys).
+- Modèle utilisé : `claude-haiku-4-5-20251001` (~$0.0004/call).
+- Pour Vercel : ajouter la variable dans **Dashboard → Settings → Environment Variables** (Environment : Production + Preview).
 
 ---
 

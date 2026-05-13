@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Architecture ✅. Prochain : Sprint 4 implémentation (AI-INFRA-01 en premier) ou Sprint 3B (Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅. Prochain : AI-INFRA-01 (commencer par `npm install @anthropic-ai/sdk`) ou Sprint 3B (Apple Music) ou FEAT-SC-TS.**
 
 ---
 
@@ -55,7 +55,22 @@ Ce qui est fait :
 Ce qui est fait :
 - `app/components/Header.tsx` : ajout liens IDs (amber quand actif) + Sets dans la nav desktop, utilisation de `onCrates`, `onIds`, `onSets` pour l'état actif
 
-**Sprint 4 — AI Metadata — architecture validée, implémentation À faire**
+**Sprint 4 — AI Metadata — config prête ✅, implémentation À faire**
+
+Setup effectué 2026-05-13 :
+- `.gitignore` : `.env*` + `!.env.example` — `.env.local` ignoré ✅, `.env.example` commité ✅
+- `.env.example` créé avec `ANTHROPIC_API_KEY=` (valeur vide, template)
+- `ANTHROPIC_API_KEY` sans préfixe `NEXT_PUBLIC_` → server-side uniquement dans Next.js (jamais au client)
+- `next.config.ts` : aucun changement nécessaire (route Node.js par défaut, pas edge)
+- Pour Vercel : ajouter la clé dans Dashboard → Settings → Environment Variables
+
+**Pour démarrer AI-INFRA-01 dans la prochaine session :**
+1. `npm install @anthropic-ai/sdk` (pas encore installé)
+2. Créer `app/api/suggest-metadata/route.ts`
+3. Implémenter POST handler — input `{ rawText, platform?, existingFields? }`, output `{ suggestions, confidence, error? }`
+4. Modèle : `claude-haiku-4-5-20251001`
+5. Retourner `{ error: "AI unavailable" }` si `ANTHROPIC_API_KEY` absent (pas de crash)
+6. Tester via curl avant toute UI
 
 Architecture décidée 2026-05-13 :
 - Route serveur : `app/api/suggest-metadata/route.ts` (POST, server-side, jamais exposé côté client)
@@ -63,7 +78,6 @@ Architecture décidée 2026-05-13 :
 - Déclencheur : bouton manuel `✦ AI suggestions` dans Add Track, Log ID, Quick Add
 - Output : `{ suggestions: { artist?, title?, genre?, mood?, summary? }, confidence: number }`
 - UX : panel inline, Apply par champ ou Apply all — jamais d'écrasement automatique
-- Env var requise : `ANTHROPIC_API_KEY` (déjà documentée dans README)
 - Aucune migration SQL
 - Ordre : AI-INFRA-01 → AI-META-ADD → AI-META-IDS → AI-META-QA
 
