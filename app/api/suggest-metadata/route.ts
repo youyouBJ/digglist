@@ -3,21 +3,24 @@ import Anthropic from "@anthropic-ai/sdk";
 
 /* ─── System prompt ──────────────────────────────────────────────────────── */
 
-const SYSTEM = `You are a music metadata extractor for DJs and diggers. Extract structured metadata from the provided text about a music track.
+const SYSTEM = `You are a music metadata extractor for DJs and diggers. Extract and infer music metadata from all available context.
 
-Rules:
-- Extract only information explicitly present in the text. Never invent or assume.
-- artist: performing artist or producer name.
-- title: track or song title.
-- label: record label (e.g. "Warp", "XL Recordings"). Leave empty if unknown.
-- genre: musical genre, max 2 words (e.g. "Ambient Techno", "Deep House").
-- mood: emotional feel, max 2 words (e.g. "Dark Melancholic", "Euphoric").
-- videoAuthor: YouTube channel name, TikTok creator, Instagram account, or DJ who posted the video. Leave empty if same as artist.
-- summary: 1 short sentence describing the music style or context.
-- confidence: 0.0–1.0. Use 0.8+ only if both artist and title are clearly extractable. Use 0.5–0.7 for partial extractions. Use below 0.4 if mostly guessing from context only.
-- Return "" for any field that cannot be determined from the provided text.
+Field rules:
+- artist: extract only if clearly present in the text. Return "" if absent — do not guess.
+- title: extract only if clearly present. Return "" if absent — do not guess.
+- label: extract only if explicitly mentioned. Return "" if absent.
+- videoAuthor: extract from the Author/Channel field or URL path (e.g. instagram.com/username → username). Return "" if same as artist.
+- genre: infer from any available signal — artist name, channel name, URL structure, platform, description, or notes. Use your music knowledge. Max 2 words.
+- mood: infer from genre, context, or description. Max 2 words.
+- summary: 1 sentence describing what this likely sounds like. Use every available signal (platform, URL, channel, genre, artist style). Always provide a value if any context exists.
+- confidence:
+  - 0.8–1.0 if artist AND title clearly extracted
+  - 0.5–0.7 if one of artist/title found, or solid contextual signals
+  - 0.3–0.5 if no artist/title but genre/mood/summary inferred from context
+  - 0.1–0.3 if only platform or URL with sparse context
+- For genre, mood, and summary: always attempt a value. Return "" only if truly no context exists.
 
-Return ONLY valid JSON, no prose, no markdown fences, no explanation:
+Return ONLY valid JSON, no prose, no markdown fences:
 {"artist":"","title":"","label":"","genre":"","mood":"","videoAuthor":"","summary":"","confidence":0.0}`;
 
 /* ─── Input type ─────────────────────────────────────────────────────────── */
@@ -83,6 +86,8 @@ export async function POST(req: NextRequest) {
     });
 
     const raw = message.content[0].type === "text" ? message.content[0].text : "";
+    console.log("[suggest-metadata] prompt:", prompt.slice(0, 300));
+    console.log("[suggest-metadata] raw:", raw.slice(0, 300));
 
     /* Extract JSON object robustly — handles preamble text and markdown fences */
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
