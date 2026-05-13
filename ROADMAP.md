@@ -14,7 +14,7 @@
 | Sets+ | Sets — Enrichment (artist, party, setDate, moments) | 1 | ✅ |
 | 3A | Rich Media — Bandcamp + TikTok preview | 1 | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | 2–3 | Spotify ✅ / Apple Music À faire |
-| 4 | Smart Metadata / AI | 2 | Architecture validée ✦ |
+| 4 | Smart Metadata / AI | 2 | Infra ✅ — UI À faire |
 | 5 | Crates Evolution | 1–2 | À faire |
 | 6 | Polish V1 | 2–3 | À faire |
 
@@ -198,10 +198,10 @@ Effectivement gratuit pour un usage DJ personnel.
 
 | Ordre | ID | Description | Fichier | Complexité | Dépendances |
 |-------|----|-------------|---------|-----------|-------------|
-| 1 | AI-INFRA-01 | Route `POST /api/suggest-metadata` — Haiku call, JSON output, fallback errors | `app/api/suggest-metadata/route.ts` | M | `ANTHROPIC_API_KEY` dans `.env.local` |
-| 2 | AI-META-ADD | Bouton `✦ AI suggestions` + panel inline dans Add Track | `add-track/page.tsx` | M | AI-INFRA-01 |
-| 3 | AI-META-IDS | Même intégration dans Log ID — cas d'usage le plus précieux | `ids/new/page.tsx` | S | AI-INFRA-01 |
-| 4 | AI-META-QA | Intégration dans Quick Add — form simplifié | `quick-add/page.tsx` | S | AI-INFRA-01 |
+| 1 | AI-INFRA-01 | Route `POST /api/suggest-metadata` — Haiku call, JSON output, fallback errors | `app/api/suggest-metadata/route.ts` | M | `ANTHROPIC_API_KEY` dans `.env.local` | ✅ |
+| 2 | AI-META-ADD | Bouton `✦ AI suggestions` + panel inline dans Add Track | `add-track/page.tsx` | M | AI-INFRA-01 | À faire |
+| 3 | AI-META-IDS | Même intégration dans Log ID — cas d'usage le plus précieux | `ids/new/page.tsx` | S | AI-INFRA-01 | À faire |
+| 4 | AI-META-QA | Intégration dans Quick Add — form simplifié | `quick-add/page.tsx` | S | AI-INFRA-01 | À faire |
 
 **Variable d'env** à ajouter dans `.env.local` : `ANTHROPIC_API_KEY=<clé>` (déjà documentée dans README).
 
@@ -331,7 +331,7 @@ create policy "Public read by share_token — crates"
 | Crates Patterns | Motifs/patterns sur crates | ✅ |
 | 3A | Rich Media — Bandcamp + TikTok | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | Spotify ✅ / Apple Music À faire |
-| 4 | Smart Metadata / AI | Architecture validée ✦ |
+| 4 | Smart Metadata / AI | Infra ✅ — UI À faire |
 | 5 | Crates Evolution | À faire |
 | 6 | Polish V1 | À faire |
 

@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅. Prochain : AI-INFRA-01 (commencer par `npm install @anthropic-ai/sdk`) ou Sprint 3B (Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅. Prochain : AI-META-ADD (bouton UI dans add-track/ids/new) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -55,22 +55,33 @@ Ce qui est fait :
 Ce qui est fait :
 - `app/components/Header.tsx` : ajout liens IDs (amber quand actif) + Sets dans la nav desktop, utilisation de `onCrates`, `onIds`, `onSets` pour l'état actif
 
-**Sprint 4 — AI Metadata — config prête ✅, implémentation À faire**
+**Sprint 4 — AI Metadata — AI-INFRA-01 terminé ✅**
 
-Setup effectué 2026-05-13 :
+Config effectuée 2026-05-13 :
 - `.gitignore` : `.env*` + `!.env.example` — `.env.local` ignoré ✅, `.env.example` commité ✅
-- `.env.example` créé avec `ANTHROPIC_API_KEY=` (valeur vide, template)
-- `ANTHROPIC_API_KEY` sans préfixe `NEXT_PUBLIC_` → server-side uniquement dans Next.js (jamais au client)
-- `next.config.ts` : aucun changement nécessaire (route Node.js par défaut, pas edge)
-- Pour Vercel : ajouter la clé dans Dashboard → Settings → Environment Variables
+- `ANTHROPIC_API_KEY` sans préfixe `NEXT_PUBLIC_` → server-side uniquement (jamais au client)
 
-**Pour démarrer AI-INFRA-01 dans la prochaine session :**
-1. `npm install @anthropic-ai/sdk` (pas encore installé)
-2. Créer `app/api/suggest-metadata/route.ts`
-3. Implémenter POST handler — input `{ rawText, platform?, existingFields? }`, output `{ suggestions, confidence, error? }`
-4. Modèle : `claude-haiku-4-5-20251001`
-5. Retourner `{ error: "AI unavailable" }` si `ANTHROPIC_API_KEY` absent (pas de crash)
-6. Tester via curl avant toute UI
+Route créée 2026-05-13 :
+- `app/api/suggest-metadata/route.ts` — POST, Node.js runtime, `claude-haiku-4-5-20251001`
+- Input : `{ platform?, title?, artist?, description?, caption?, author?, url?, notes? }`
+- Output : `{ artist, title, genre, mood, summary, confidence }` ou `{ error }`
+- Fallback `{ error: "AI unavailable" }` si clé absente — pas de crash
+- `@anthropic-ai/sdk` installé dans `package.json`
+
+Test curl (dev server en cours sur port 3000) :
+```bash
+# Test réel
+curl -s -X POST http://localhost:3000/api/suggest-metadata \
+  -H "Content-Type: application/json" \
+  -d '{"platform":"YouTube","title":"Burial - Archangel"}'
+
+# Test body vide
+curl -s -X POST http://localhost:3000/api/suggest-metadata \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Prochaine étape : AI-META-ADD** — bouton `✦ AI suggestions` + panel inline dans `add-track/page.tsx`
 
 Architecture décidée 2026-05-13 :
 - Route serveur : `app/api/suggest-metadata/route.ts` (POST, server-side, jamais exposé côté client)

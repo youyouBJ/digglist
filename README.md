@@ -99,6 +99,7 @@ npm run lint     # ESLint
 /sets/[id]/edit         → Éditer infos set + gérer moments existants
 
 /api/fetch-metadata     → Route API serveur : oEmbed YouTube/SoundCloud/TikTok + HTML scraping
+/api/suggest-metadata  → Route API serveur : AI suggestions (artist/title/genre/mood/summary/confidence)
 ```
 
 ---
@@ -130,8 +131,15 @@ npm run lint     # ESLint
 - Spotify : iframe embed (track/episode 152px, album/playlist 352px) ; link card pour les pages artiste
 - TikTok/Instagram/Bandcamp : pas d'iframe — link card "Open on …"
 
+### AI Metadata (Sprint 4)
+- Route `POST /api/suggest-metadata` — server-side uniquement, modèle `claude-haiku-4-5-20251001`
+- Input : `platform`, `title`, `artist`, `description`, `caption`, `author`, `url`, `notes`
+- Output : `artist`, `title`, `genre`, `mood`, `summary`, `confidence` (0.0–1.0)
+- Déclencheur : bouton `✦ AI suggestions` (jamais auto), UI à venir dans les formulaires
+- Fallback propre si `ANTHROPIC_API_KEY` absent → `{"error":"AI unavailable"}`, pas de crash
+
 ### Crates
-- Création libre, 24 couleurs (8 familles × 3 nuances)
+- Création libre, 36 couleurs (12 familles × 3 nuances), 7 patterns visuels (dots/lines/diagonal/grid/rings/cross)
 - Sous-crates (parentId)
 - Ajout/retrait de tracks depuis la page détail (sheet modal)
 - Filtre par crate dans Library et IDs
