@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅. Prochain : Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Architecture ✅. Prochain : Sprint 4 implémentation (AI-INFRA-01 en premier) ou Sprint 3B (Apple Music) ou FEAT-SC-TS.**
 
 ---
 
@@ -54,6 +54,18 @@ Ce qui est fait :
 
 Ce qui est fait :
 - `app/components/Header.tsx` : ajout liens IDs (amber quand actif) + Sets dans la nav desktop, utilisation de `onCrates`, `onIds`, `onSets` pour l'état actif
+
+**Sprint 4 — AI Metadata — architecture validée, implémentation À faire**
+
+Architecture décidée 2026-05-13 :
+- Route serveur : `app/api/suggest-metadata/route.ts` (POST, server-side, jamais exposé côté client)
+- Modèle : `claude-haiku-4-5-20251001` (~$0.0004/call, ~0.5–1s)
+- Déclencheur : bouton manuel `✦ AI suggestions` dans Add Track, Log ID, Quick Add
+- Output : `{ suggestions: { artist?, title?, genre?, mood?, summary? }, confidence: number }`
+- UX : panel inline, Apply par champ ou Apply all — jamais d'écrasement automatique
+- Env var requise : `ANTHROPIC_API_KEY` (déjà documentée dans README)
+- Aucune migration SQL
+- Ordre : AI-INFRA-01 → AI-META-ADD → AI-META-IDS → AI-META-QA
 
 **Sprint UX Hub + Library lisibilité — terminé ✅**
 

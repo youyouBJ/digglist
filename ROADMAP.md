@@ -14,7 +14,7 @@
 | Sets+ | Sets — Enrichment (artist, party, setDate, moments) | 1 | ✅ |
 | 3A | Rich Media — Bandcamp + TikTok preview | 1 | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | 2–3 | Spotify ✅ / Apple Music À faire |
-| 4 | Smart Metadata / AI | 2 | À faire |
+| 4 | Smart Metadata / AI | 2 | Architecture validée ✦ |
 | 5 | Crates Evolution | 1–2 | À faire |
 | 6 | Polish V1 | 2–3 | À faire |
 
@@ -140,26 +140,72 @@ alter table public.tracks
 
 ## Sprint 4 — Smart Metadata / AI
 > Objectif : réduire la friction de saisie via IA.
-> Sessions : 2.
+> **Aucune migration SQL.** Sessions : 2.
+> Architecture validée 2026-05-13.
 
-### Infrastructure à décider avant
+### Architecture décidée
 
-Option A : **Route API interne** (`/api/ai-metadata`) qui appelle Claude API (Anthropic) — cohérent avec la stack.
-Option B : **Enrichissement côté client** — non recommandé (clé API exposée).
+**Route** : `app/api/suggest-metadata/route.ts` — POST, server-side uniquement (pattern identique à `fetch-metadata`).
+**Modèle** : `claude-haiku-4-5-20251001` — ~0.5–1s, ~$0.0004/call, suffisant pour extraction de texte court.
+**Déclencheur** : toujours manuel (`✦ AI suggestions`), jamais auto-call.
 
-**Recommandation** : Option A, route authentifiée comme `/api/fetch-metadata`.
+#### Contrat API
 
-Variable d'env à ajouter : `ANTHROPIC_API_KEY` (ou `OPENAI_API_KEY` si OpenAI).
+```
+POST /api/suggest-metadata
+Body: {
+  rawText: string
+  platform?: string
+  existingFields?: { title?, artist?, genre?, mood?, notes? }
+}
+Response: {
+  suggestions: { artist?, title?, genre?, mood?, summary? }
+  confidence: number   // 0.0–1.0
+  error?: string
+}
+```
+
+Retourne toujours 200. Si `ANTHROPIC_API_KEY` absente → `{ error: "AI unavailable" }`, UI affiche un message propre.
+
+#### UX exacte
+
+1. Formulaire (Add Track / Log ID / Quick Add) — bouton `✦ AI suggestions` visible si du texte est disponible
+2. Tap → spinner inline (~1s) → panel suggestions s'affiche sous les champs
+3. Panel : une ligne par champ proposé (label · valeur · bouton **Apply**)
+4. Confidence visible ; warning `Review carefully` si < 0.5
+5. **Apply all** + **Dismiss** — aucun champ n'est jamais écrasé sans action explicite de l'utilisateur
+
+#### Coûts estimés
+
+| Volume | Coût Haiku 4.5 |
+|--------|---------------|
+| 1 000 calls | ~$0.40 |
+| 10 000 calls | ~$4 |
+
+Effectivement gratuit pour un usage DJ personnel.
+
+#### Risques
+
+| Risque | Mitigation |
+|--------|-----------|
+| Hallucination | Prompt : "extract only, never invent" ; confidence score visible |
+| TikTok emoji/hashtag soup | Strip `#tag @user emoji` avant d'envoyer rawText |
+| Clé API exposée | Server route uniquement, jamais client-side |
+| API key manquante | Fallback propre `{ error: "AI unavailable" }`, pas de crash |
+| Apply all aveugle | Warning visuel si confidence < 0.5 |
 
 ### Ordre d'exécution
 
 | Ordre | ID | Description | Fichier | Complexité | Dépendances |
 |-------|----|-------------|---------|-----------|-------------|
-| 1 | AI-INFRA-01 | Route `/api/ai-metadata` — reçoit titre/description, retourne artist/title/genre | `app/api/ai-metadata/route.ts` | M | API key configurée |
-| 2 | AI-META-01 | Intégrer AI-INFRA-01 dans Quick Add + Add Track : bouton "Suggest" ou auto-call | `quick-add/page.tsx`, `add-track/page.tsx` | M | AI-INFRA-01 |
-| 3 | AI-DESC-01 | Résumé IA des longues descriptions TikTok/Instagram dans les notes d'un ID | `api/ai-metadata/route.ts` + `ids/new/page.tsx` | S | AI-INFRA-01 |
+| 1 | AI-INFRA-01 | Route `POST /api/suggest-metadata` — Haiku call, JSON output, fallback errors | `app/api/suggest-metadata/route.ts` | M | `ANTHROPIC_API_KEY` dans `.env.local` |
+| 2 | AI-META-ADD | Bouton `✦ AI suggestions` + panel inline dans Add Track | `add-track/page.tsx` | M | AI-INFRA-01 |
+| 3 | AI-META-IDS | Même intégration dans Log ID — cas d'usage le plus précieux | `ids/new/page.tsx` | S | AI-INFRA-01 |
+| 4 | AI-META-QA | Intégration dans Quick Add — form simplifié | `quick-add/page.tsx` | S | AI-INFRA-01 |
 
-**BPM-01 — déféré** : complexité XL, aucune API publique fiable pour l'extraction BPM à un timestamp. Ne pas développer avant d'avoir un use case validé avec une API spécifique.
+**Variable d'env** à ajouter dans `.env.local` : `ANTHROPIC_API_KEY=<clé>` (déjà documentée dans README).
+
+**BPM-01 — déféré** : complexité XL, aucune API publique fiable. Ne pas développer.
 
 ---
 
@@ -282,10 +328,10 @@ create policy "Public read by share_token — crates"
 | Sets+ | Sets Enrichment — artist, party, setDate, moments | ✅ |
 | UX+ | Add hub (4 actions) + Library crate dots inline titre | ✅ |
 | Crates UX | Retrait IDs Needed + palette 36 couleurs | ✅ |
-| Crates Patterns | Motifs/patterns sur crates | ⏳ SQL en attente |
+| Crates Patterns | Motifs/patterns sur crates | ✅ |
 | 3A | Rich Media — Bandcamp + TikTok | ✅ |
 | 3B | Rich Media — Spotify + Apple Music | Spotify ✅ / Apple Music À faire |
-| 4 | Smart Metadata / AI | À faire |
+| 4 | Smart Metadata / AI | Architecture validée ✦ |
 | 5 | Crates Evolution | À faire |
 | 6 | Polish V1 | À faire |
 
@@ -353,7 +399,7 @@ Widget officiel, hash strippé, `m.soundcloud.com` normalisé, height 120 tracks
 - **Ne pas ajouter de dépendances npm** sans raison claire
 - **Ne pas modifier `supabase-server.ts`** sans tester les routes API
 - **Ne pas passer `user_id` manquant dans les INSERTs** — RLS rejette silencieusement
-- **Ne pas toucher IA / BPM / Spotify / Apple Music / Bandcamp** avant Phase 3/4
+- **Ne pas toucher BPM** — aucune API fiable, complexité XL, déféré indéfiniment
 
 ---
 
