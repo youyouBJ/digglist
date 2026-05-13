@@ -791,6 +791,14 @@ function getYouTubeEmbedId(url: string): string | null {
   return m?.[1] ?? null;
 }
 
+function getSpotifyEmbedUrl(url: string): { src: string; height: number } | null {
+  const m = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([A-Za-z0-9]+)/);
+  if (!m) return null;
+  const [, type, spotId] = m;
+  const height = type === "track" || type === "episode" ? 152 : 352;
+  return { src: `https://open.spotify.com/embed/${type}/${spotId}?theme=0`, height };
+}
+
 function getSoundCloudEmbedUrl(url: string): string | null {
   if (!/soundcloud\.com/.test(url)) return null;
   try {
@@ -819,8 +827,9 @@ function getSoundCloudEmbedUrl(url: string): string | null {
 }
 
 function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null }) {
-  const ytId = getYouTubeEmbedId(url);
-  const scUrl = getSoundCloudEmbedUrl(url);
+  const ytId         = getYouTubeEmbedId(url);
+  const scUrl        = getSoundCloudEmbedUrl(url);
+  const spotifyEmbed = getSpotifyEmbedUrl(url);
 
   if (ytId) {
     const src = `https://www.youtube.com/embed/${ytId}${timestamp ? `?start=${timestamp}` : ""}`;
@@ -866,22 +875,43 @@ function TrackEmbed({ url, timestamp }: { url: string; timestamp: number | null 
     );
   }
 
+  if (spotifyEmbed) {
+    return (
+      <div className="mx-5 sm:mx-8 mb-4">
+        <div className="rounded-[10px] overflow-hidden"
+          style={{ border: "0.5px solid var(--rule2)" }}>
+          <iframe
+            src={spotifyEmbed.src}
+            title="Spotify player"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            className="w-full"
+            style={{ border: "none", height: spotifyEmbed.height }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return <PlatformLinkCard url={url} />;
 }
 
 function PlatformLinkCard({ url }: { url: string }) {
-  const name = /bandcamp\.com/.test(url) ? "Bandcamp"
-    : /tiktok\.com/.test(url)    ? "TikTok"
-    : /instagram\.com/.test(url) ? "Instagram"
+  const name = /bandcamp\.com/.test(url)       ? "Bandcamp"
+    : /tiktok\.com/.test(url)              ? "TikTok"
+    : /instagram\.com/.test(url)           ? "Instagram"
+    : /open\.spotify\.com/.test(url)       ? "Spotify"
     : null;
 
   if (!name) return null;
 
   const accent = name === "Bandcamp"  ? "#1da0c3"
     : name === "Instagram" ? "#c13584"
+    : name === "Spotify"   ? "#1DB954"
     : "var(--t2)";
   const badge  = name === "Bandcamp"  ? "bc"
     : name === "TikTok"    ? "tt"
+    : name === "Spotify"   ? "sp"
     : "ig";
 
   return (

@@ -1,6 +1,7 @@
 export const PLATFORMS = [
   "YouTube",
   "SoundCloud",
+  "Spotify",
   "Bandcamp",
   "Discogs",
   "TikTok",

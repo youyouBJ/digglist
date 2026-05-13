@@ -566,9 +566,18 @@ function getSoundCloudEmbedUrl(url: string): string | null {
   }
 }
 
+function getSpotifyEmbedUrl(url: string): { src: string; height: number } | null {
+  const m = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([A-Za-z0-9]+)/);
+  if (!m) return null;
+  const [, type, spotId] = m;
+  const height = type === "track" || type === "episode" ? 152 : 352;
+  return { src: `https://open.spotify.com/embed/${type}/${spotId}?theme=0`, height };
+}
+
 function SetEmbed({ url }: { url: string }) {
-  const ytId = getYouTubeEmbedId(url);
-  const scUrl = getSoundCloudEmbedUrl(url);
+  const ytId         = getYouTubeEmbedId(url);
+  const scUrl        = getSoundCloudEmbedUrl(url);
+  const spotifyEmbed = getSpotifyEmbedUrl(url);
 
   if (ytId) {
     return (
@@ -609,18 +618,38 @@ function SetEmbed({ url }: { url: string }) {
     );
   }
 
-  /* Link card for Bandcamp / TikTok / Instagram sets */
-  const name = /bandcamp\.com/.test(url) ? "Bandcamp"
-    : /tiktok\.com/.test(url)    ? "TikTok"
-    : /instagram\.com/.test(url) ? "Instagram"
+  if (spotifyEmbed) {
+    return (
+      <div className="mx-5 sm:mx-8 mb-4">
+        <div className="rounded-[10px] overflow-hidden"
+          style={{ border: "0.5px solid var(--rule2)" }}>
+          <iframe
+            src={spotifyEmbed.src}
+            title="Spotify player"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            className="w-full"
+            style={{ border: "none", height: spotifyEmbed.height }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  /* Link card for Bandcamp / TikTok / Instagram / Spotify (artist pages) sets */
+  const name = /bandcamp\.com/.test(url)  ? "Bandcamp"
+    : /tiktok\.com/.test(url)         ? "TikTok"
+    : /instagram\.com/.test(url)      ? "Instagram"
+    : /open\.spotify\.com/.test(url)  ? "Spotify"
     : null;
 
   if (!name) return null;
 
   const accent = name === "Bandcamp"  ? "#1da0c3"
     : name === "Instagram" ? "#c13584"
+    : name === "Spotify"   ? "#1DB954"
     : "var(--t2)";
-  const badge  = name === "Bandcamp" ? "bc" : name === "TikTok" ? "tt" : "ig";
+  const badge  = name === "Bandcamp" ? "bc" : name === "TikTok" ? "tt" : name === "Spotify" ? "sp" : "ig";
 
   return (
     <div className="mx-5 sm:mx-8 mb-4">

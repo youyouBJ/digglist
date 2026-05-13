@@ -36,6 +36,7 @@ function decodeEntities(str: string): string {
 function detectPlatform(url: string): string {
   if (/youtube\.com|youtu\.be/.test(url))  return "YouTube";
   if (/soundcloud\.com/.test(url))         return "SoundCloud";
+  if (/open\.spotify\.com/.test(url))      return "Spotify";
   if (/bandcamp\.com/.test(url))           return "Bandcamp";
   if (/discogs\.com/.test(url))            return "Discogs";
   if (/tiktok\.com/.test(url))             return "TikTok";
@@ -181,21 +182,51 @@ async function fetchInstagram(url: string): Promise<Meta | null> {
 async function fetchBandcamp(url: string): Promise<Meta | null> {
   try {
     const oembed = `https://bandcamp.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-    const res    = await fetch(oembed, { signal: AbortSignal.timeout(6000) });
-    if (!res.ok) return null;
-    const data = await res.json() as {
-      title?: string; author_name?: string; thumbnail_url?: string;
-    };
-    const rawTitle = data.title ?? "";
-    const { title, artist } = splitArtistTitle(rawTitle);
-    return {
-      title:    title || rawTitle,
-      artist:   data.author_name ?? artist,
-      imageUrl: data.thumbnail_url ?? "",
-    };
-  } catch {
-    return null;
+    const res    = await fetch(oembed, {
+      headers: { "User-Agent": BROWSER_UA },
+      signal:  AbortSignal.timeout(6000),
+    });
+    if (res.ok) {
+      const data = await res.json() as { title?: string; author_name?: string; thumbnail_url?: string };
+      const rawTitle = data.title ?? "";
+      if (rawTitle || data.author_name) {
+        const { title, artist } = splitArtistTitle(rawTitle);
+        return {
+          title:    title || rawTitle,
+          artist:   data.author_name ?? artist,
+          imageUrl: data.thumbnail_url ?? "",
+        };
+      }
+    }
+  } catch { /* fall through to HTML */ }
+
+  /* HTML fallback — og:title format: "Album Name, by Artist Name" */
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const rawTitle = extractMeta(html, "og:title") || extractTitle(html);
+  const byMatch  = rawTitle.match(/^(.+),\s*by\s+(.+)$/i);
+  if (byMatch) {
+    return { title: byMatch[1].trim(), artist: byMatch[2].trim(), imageUrl: extractMeta(html, "og:image") };
   }
+  const { title, artist } = splitArtistTitle(rawTitle);
+  return { title: title || rawTitle, artist, imageUrl: extractMeta(html, "og:image") };
+}
+
+async function fetchSpotify(url: string): Promise<Meta | null> {
+  const html = await fetchHtml(url);
+  if (!html) return null;
+  const ogTitle   = extractMeta(html, "og:title");
+  const pageTitle = extractTitle(html);
+  /* Page title formats:
+     "Track Name - song and lyrics by Artist | Spotify"
+     "Album Name - Album by Artist | Spotify"  */
+  const artistMatch = pageTitle.match(/ by ([^|]+?)\s*\|\s*Spotify\s*$/i);
+  const artist      = artistMatch ? artistMatch[1].trim() : "";
+  return {
+    title:    ogTitle || "",
+    artist,
+    imageUrl: extractMeta(html, "og:image"),
+  };
 }
 
 async function fetchDiscogs(url: string): Promise<Meta | null> {
@@ -253,6 +284,7 @@ export async function GET(request: NextRequest) {
   try {
     if (platform === "YouTube")        meta = await fetchYouTube(url);
     else if (platform === "SoundCloud") meta = await fetchSoundCloud(url);
+    else if (platform === "Spotify")    meta = await fetchSpotify(url);
     else if (platform === "Bandcamp")   meta = await fetchBandcamp(url);
     else if (platform === "TikTok")     meta = await fetchTikTok(url);
     else if (platform === "Instagram")  meta = await fetchInstagram(url);
