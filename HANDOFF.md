@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅. Prochain : Patterns crates (SQL confirmé ?) ou Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅. Prochain : Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
@@ -40,15 +40,20 @@ Ce qui est fait :
 - `app/crates/page.tsx` : retrait de l'entrée "IDs Needed" (n'est pas une crate, redirige vers /ids qui a sa propre nav)
 - `lib/constants.ts` : palette étendue de 24 à 36 couleurs — 4 nouvelles familles : Sage/olive, Navy/midnight, Slate/cool-gray, Crimson
 
-**Patterns crates — en attente SQL**
+**Patterns crates — terminé ✅**
 
-SQL à soumettre dans Supabase Dashboard :
-```sql
-alter table public.crates
-  add column pattern text not null default '';
-```
-Valeurs prévues : `""` (aucun), `"dots"`, `"lines"`, `"grid"`, `"diagonal"`, `"rings"`, `"cross"`.
-Une fois confirmé, implémenter : selector dans New/Edit Crate, rendu pattern sur swatches/rows/pills, `CrateRow` et `Crate` type mis à jour.
+Ce qui est fait :
+- `lib/types.ts` : `Crate` étendu avec `pattern: string`
+- `lib/constants.ts` : `getPatternStyle(pattern)` (SVG data-URI — dots, lines, diagonal, grid, rings, cross) + `CRATE_PATTERNS` array
+- `lib/supabase-crates.ts` : `CrateRow`, `toCrate`, `createCrate`, `updateCrate` mis à jour
+- `app/crates/new/page.tsx` + `app/crates/[id]/edit/page.tsx` : pattern picker (7 swatches 44×28 avec preview couleur+pattern live), bouton submit preview couleur+pattern
+- `app/crates/page.tsx` : swatch 32×32 couleur+pattern dans chaque CrateRow
+- `app/library/page.tsx` + `app/ids/page.tsx` : mini swatch 14×9 (remplace le dot rond) dans les filter pills
+
+**Desktop/Tablet nav harmonization — terminé ✅**
+
+Ce qui est fait :
+- `app/components/Header.tsx` : ajout liens IDs (amber quand actif) + Sets dans la nav desktop, utilisation de `onCrates`, `onIds`, `onSets` pour l'état actif
 
 **Sprint UX Hub + Library lisibilité — terminé ✅**
 
@@ -128,6 +133,11 @@ Choix suivants :
 | Sets list — affiche artist + party | ✅ |
 | Sets detail — hero avec artist (kicker) + party + setDate | ✅ |
 | Library/IDs — pastilles crates inline titre (max 2 + "+N") | ✅ |
+| Crates — patterns visuels (dots, lines, diagonal, grid, rings, cross) | ✅ |
+| Crates — picker pattern dans New/Edit Crate avec preview live | ✅ |
+| Crates list — swatch couleur+pattern (32×32) dans chaque row | ✅ |
+| Library/IDs filter pills — mini swatch couleur+pattern (remplace dot) | ✅ |
+| Header desktop — liens IDs + Sets ajoutés | ✅ |
 
 ---
 
@@ -142,7 +152,7 @@ Aucun. BUG-02 corrigé (2026-05-12).
 - Rating non visible dans les rows Library/IDs (persisté mais non affiché en liste)
 - "Mark as found" flow dédié (actuellement ouvre le form edit complet)
 - Tri / sort dans Library et IDs
-- Crate pills sans count de tracks
+- ~~Crate pills sans count de tracks~~ — pills affichent maintenant un swatch avec count
 - ~~Sets — onglet, page, flow dédié~~ ✅ Sprint 2A
 - PWA manifest + Add to Home Screen (Sprint 6)
 - Partage public (Sprint 6)
@@ -160,7 +170,7 @@ lib/supabase-tracks.ts    → TrackRow, toTrack, toRow, CRUD functions (inclut s
 lib/supabase-sets.ts      → MixSet CRUD, getSetTracks
 lib/supabase-crates.ts    → Crate CRUD, syncTrackCrates
 lib/timestamp.ts          → extractTimestampFromUrl, parseManualTimestamp, formatTimestamp
-lib/constants.ts          → PLATFORMS, CRATE_COLORS (24 couleurs), STATUSES (dépréciées UI)
+lib/constants.ts          → PLATFORMS, CRATE_COLORS (36 couleurs), CRATE_PATTERNS, getPatternStyle(), STATUSES (dépréciées UI)
 app/api/fetch-metadata/   → Route API : oEmbed + scraping, retourne toujours 200
 app/components/BottomNav.tsx → Nav mobile + sheet Add (2 options)
 app/track/[id]/page.tsx   → Détail track + embed SC normalisé
