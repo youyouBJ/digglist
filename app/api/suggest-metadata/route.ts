@@ -9,14 +9,16 @@ Rules:
 - Extract only information explicitly present in the text. Never invent or assume.
 - artist: performing artist or producer name.
 - title: track or song title.
+- label: record label (e.g. "Warp", "XL Recordings"). Leave empty if unknown.
 - genre: musical genre, max 2 words (e.g. "Ambient Techno", "Deep House").
 - mood: emotional feel, max 2 words (e.g. "Dark Melancholic", "Euphoric").
+- videoAuthor: YouTube channel name, TikTok creator, Instagram account, or DJ who posted the video. Leave empty if same as artist.
 - summary: 1 short sentence describing the music style or context.
-- confidence: 0.0–1.0. Use 0.8+ only if both artist and title are clearly extractable from the text. Use 0.5–0.7 for partial extractions. Use below 0.4 if mostly guessing from context only.
+- confidence: 0.0–1.0. Use 0.8+ only if both artist and title are clearly extractable. Use 0.5–0.7 for partial extractions. Use below 0.4 if mostly guessing from context only.
 - Return "" for any field that cannot be determined from the provided text.
 
-Return only valid JSON with no markdown fences, no explanation:
-{"artist":"","title":"","genre":"","mood":"","summary":"","confidence":0.0}`;
+Return ONLY valid JSON, no prose, no markdown fences, no explanation:
+{"artist":"","title":"","label":"","genre":"","mood":"","videoAuthor":"","summary":"","confidence":0.0}`;
 
 /* ─── Input type ─────────────────────────────────────────────────────────── */
 
@@ -24,6 +26,7 @@ type SuggestInput = {
   platform?:    string;
   title?:       string;
   artist?:      string;
+  label?:       string;
   description?: string;
   caption?:     string;
   author?:      string;
@@ -39,6 +42,7 @@ function buildPrompt(input: SuggestInput): string {
   if (input.url)         lines.push(`URL: ${input.url}`);
   if (input.title)       lines.push(`Title: ${input.title}`);
   if (input.artist)      lines.push(`Artist: ${input.artist}`);
+  if (input.label)       lines.push(`Label: ${input.label}`);
   if (input.author)      lines.push(`Author/Channel: ${input.author}`);
   if (input.description) lines.push(`Description: ${input.description}`);
   if (input.caption)     lines.push(`Caption: ${input.caption}`);
@@ -73,37 +77,51 @@ export async function POST(req: NextRequest) {
 
     const message = await client.messages.create({
       model:      "claude-haiku-4-5-20251001",
-      max_tokens: 256,
+      max_tokens: 400,
       system:     SYSTEM,
       messages:   [{ role: "user", content: prompt }],
     });
 
-    const raw     = message.content[0].type === "text" ? message.content[0].text : "";
-    const cleaned = raw.trim()
-      .replace(/^```(?:json)?\n?/, "")
-      .replace(/\n?```$/, "");
+    const raw = message.content[0].type === "text" ? message.content[0].text : "";
 
-    /* Parse JSON */
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(cleaned) as Record<string, unknown>;
-    } catch {
-      return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
+    /* Extract JSON object robustly — handles preamble text and markdown fences */
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      /* No JSON found — return empty result, not an error */
+      return NextResponse.json({
+        artist: "", title: "", label: "", genre: "",
+        mood: "", videoAuthor: "", summary: "", confidence: 0,
+      });
     }
 
-    /* Validate and return */
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    } catch {
+      /* Malformed JSON — return empty result */
+      return NextResponse.json({
+        artist: "", title: "", label: "", genre: "",
+        mood: "", videoAuthor: "", summary: "", confidence: 0,
+      });
+    }
+
+    const str = (k: string) => typeof parsed[k] === "string" ? (parsed[k] as string) : "";
+
     return NextResponse.json({
-      artist:     typeof parsed.artist     === "string" ? parsed.artist     : "",
-      title:      typeof parsed.title      === "string" ? parsed.title      : "",
-      genre:      typeof parsed.genre      === "string" ? parsed.genre      : "",
-      mood:       typeof parsed.mood       === "string" ? parsed.mood       : "",
-      summary:    typeof parsed.summary    === "string" ? parsed.summary    : "",
-      confidence: typeof parsed.confidence === "number"
+      artist:      str("artist"),
+      title:       str("title"),
+      label:       str("label"),
+      genre:       str("genre"),
+      mood:        str("mood"),
+      videoAuthor: str("videoAuthor"),
+      summary:     str("summary"),
+      confidence:  typeof parsed.confidence === "number"
         ? Math.min(1, Math.max(0, parsed.confidence))
         : 0,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: `AI request failed: ${msg}` }, { status: 500 });
+    console.error("[suggest-metadata]", msg);
+    return NextResponse.json({ error: "AI request failed" }, { status: 500 });
   }
 }

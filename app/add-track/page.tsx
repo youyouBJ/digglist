@@ -14,10 +14,11 @@ import { supabase } from "@/lib/supabase";
 import { getSets } from "@/lib/supabase-sets";
 
 type AiSuggestions = {
-  artist: string; title: string; genre: string;
-  mood: string; summary: string; confidence: number;
+  artist: string; title: string; label: string;
+  genre: string; mood: string; videoAuthor: string;
+  summary: string; confidence: number;
 };
-type AiField = "artist" | "title" | "genre" | "mood";
+type AiField = "artist" | "title" | "label" | "genre" | "mood" | "videoAuthor";
 
 export default function AddTrackPage() {
   const user = useRequireAuth();
@@ -106,10 +107,12 @@ export default function AddTrackPage() {
 
   function handleApplyAll() {
     if (!aiResult) return;
-    if (aiResult.artist) set("artist", aiResult.artist);
-    if (aiResult.title)  set("title",  aiResult.title);
-    if (aiResult.genre)  set("genre",  aiResult.genre);
-    if (aiResult.mood)   set("mood",   aiResult.mood);
+    if (aiResult.artist)      set("artist", aiResult.artist);
+    if (aiResult.title)       set("title",  aiResult.title);
+    if (aiResult.label)       set("label",  aiResult.label);
+    if (aiResult.genre)       set("genre",  aiResult.genre);
+    if (aiResult.mood)        set("mood",   aiResult.mood);
+    if (aiResult.videoAuthor) setVideoAuthor(aiResult.videoAuthor);
     setAiResult(null);
   }
 
@@ -388,7 +391,10 @@ export default function AddTrackPage() {
             {aiResult ? (
               <AiPanel
                 result={aiResult}
-                onApplyField={(field, value) => set(field as keyof TrackFormState, value)}
+                onApplyField={(field, value) => {
+                  if (field === "videoAuthor") setVideoAuthor(value);
+                  else set(field as keyof TrackFormState, value);
+                }}
                 onApplyAll={handleApplyAll}
                 onDismiss={() => { setAiResult(null); setAiError(null); }}
               />
@@ -682,10 +688,12 @@ function AiPanel({
   const pct   = Math.round(result.confidence * 100);
 
   const rows = [
-    { field: "artist" as AiField, label: "Artist", value: result.artist },
-    { field: "title"  as AiField, label: "Title",  value: result.title  },
-    { field: "genre"  as AiField, label: "Genre",  value: result.genre  },
-    { field: "mood"   as AiField, label: "Mood",   value: result.mood   },
+    { field: "artist"      as AiField, label: "Artist",       value: result.artist      },
+    { field: "title"       as AiField, label: "Title",        value: result.title       },
+    { field: "label"       as AiField, label: "Label",        value: result.label       },
+    { field: "genre"       as AiField, label: "Genre",        value: result.genre       },
+    { field: "mood"        as AiField, label: "Mood",         value: result.mood        },
+    { field: "videoAuthor" as AiField, label: "Video author", value: result.videoAuthor },
   ].filter((r) => r.value.trim() !== "");
 
   const noSuggestions = rows.length === 0 && !result.summary;
@@ -729,7 +737,7 @@ function AiPanel({
           className="flex items-center gap-3 px-4 py-[10px]"
           style={{ borderBottom: i < rows.length - 1 ? "0.5px solid var(--rule)" : undefined }}
         >
-          <span className="text-[11px] w-[42px] shrink-0" style={{ color: "var(--t4)" }}>{r.label}</span>
+          <span className="text-[11px] w-[68px] shrink-0" style={{ color: "var(--t4)" }}>{r.label}</span>
           <span className="flex-1 text-[13px] min-w-0 truncate" style={{ color: "var(--t1)" }}>{r.value}</span>
           <button
             type="button"

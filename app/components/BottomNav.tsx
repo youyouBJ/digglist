@@ -175,7 +175,7 @@ export default function BottomNav() {
             </p>
             <div className="px-4 flex flex-col gap-2">
               <Link
-                href="/quick-add"
+                href="/add-track"
                 onClick={() => setShowAdd(false)}
                 className="flex items-center gap-3 rounded-xl p-3.5 transition-opacity active:opacity-70"
                 style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
