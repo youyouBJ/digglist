@@ -7,7 +7,7 @@ import {
   getCrateById, getCrates, updateCrate, deleteCrate,
   type Crate,
 } from "@/lib/supabase-crates";
-import { CRATE_COLORS } from "@/lib/constants";
+import { CRATE_COLORS, CRATE_PATTERNS, getPatternStyle } from "@/lib/constants";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader, PageError } from "@/app/components/ui";
 import Header from "@/app/components/Header";
@@ -22,6 +22,7 @@ export default function EditCratePage() {
   const [name, setName]               = useState("");
   const [description, setDesc]        = useState("");
   const [color, setColor]             = useState<string>(CRATE_COLORS[0]);
+  const [pattern, setPattern]         = useState<string>("");
   const [parentId, setParentId]       = useState<string>("");
   const [parentCrates, setParentCrates] = useState<Crate[]>([]);
   const [saving, setSaving]           = useState(false);
@@ -38,6 +39,7 @@ export default function EditCratePage() {
         setName(c.name);
         setDesc(c.description);
         setColor(c.color);
+        setPattern(c.pattern ?? "");
         setParentId(c.parentId ?? "");
         setParentCrates(all.filter((x) => x.id !== id && !x.parentId));
       })
@@ -59,6 +61,7 @@ export default function EditCratePage() {
         name:        name.trim(),
         description: description.trim(),
         color,
+        pattern,
         parentId:    parentId || null,
       });
       router.push(`/crates/${id}`);
@@ -137,6 +140,39 @@ export default function EditCratePage() {
           </div>
         </div>
 
+        {/* ── Pattern ──────────────────────────────────────────── */}
+        <div style={{ borderTop: "0.5px solid var(--rule)" }}>
+          <p className="px-5 sm:px-8 pt-[14px] pb-[10px] text-[10px] tracking-[0.12em] uppercase"
+            style={{ color: "var(--t4)" }}>
+            Pattern
+          </p>
+          <div className="px-5 sm:px-8 pb-5 flex items-center gap-2 flex-wrap">
+            {CRATE_PATTERNS.map((p) => {
+              const selected = pattern === p.id;
+              const patStyle = getPatternStyle(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPattern(p.id)}
+                  className="rounded-[5px] transition-all active:scale-90"
+                  style={{
+                    width:           44,
+                    height:          28,
+                    backgroundColor: color,
+                    ...patStyle,
+                    boxShadow:  selected ? `0 0 0 2px var(--bg), 0 0 0 3.5px ${color}` : "none",
+                    transform:  selected ? "scale(1.08)" : "scale(1)",
+                    opacity:    selected ? 1 : 0.50,
+                  }}
+                  aria-label={p.label}
+                  title={p.label}
+                />
+              );
+            })}
+          </div>
+        </div>
+
         {/* ── Fields ───────────────────────────────────────────── */}
         <div style={{ borderTop: "0.5px solid var(--rule)" }}>
           <div className="flex items-center justify-between gap-4 px-5 sm:px-8 py-[14px]"
@@ -198,7 +234,7 @@ export default function EditCratePage() {
             type="submit"
             disabled={saving || !name.trim()}
             className="flex-1 h-11 rounded-[10px] text-[13px] font-medium transition-colors disabled:opacity-40"
-            style={{ background: color, color: "#fff" }}
+            style={{ backgroundColor: color, ...getPatternStyle(pattern), color: "#fff" }}
           >
             {saving ? "Saving…" : "Save changes"}
           </button>

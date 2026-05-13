@@ -10,6 +10,9 @@ export default function Header() {
   const path       = usePathname();
   const router     = useRouter();
   const onLibrary  = path.startsWith("/library") || path.startsWith("/track");
+  const onIds      = path.startsWith("/ids");
+  const onSets     = path.startsWith("/sets");
+  const onCrates   = path.startsWith("/crates");
   const isAuthPage = path.startsWith("/login") || path.startsWith("/signup");
 
   const [user, setUser] = useState<User | null>(null);
@@ -49,9 +52,23 @@ export default function Header() {
             Library
           </Link>
           <Link
+            href="/ids"
+            className="text-sm transition-colors"
+            style={{ color: onIds ? "var(--amber)" : "var(--t3)" }}
+          >
+            IDs
+          </Link>
+          <Link
+            href="/sets"
+            className="text-sm transition-colors"
+            style={{ color: onSets ? "var(--t1)" : "var(--t3)" }}
+          >
+            Sets
+          </Link>
+          <Link
             href="/crates"
             className="text-sm transition-colors"
-            style={{ color: path === "/crates" ? "var(--t1)" : "var(--t3)" }}
+            style={{ color: onCrates ? "var(--t1)" : "var(--t3)" }}
           >
             Crates
           </Link>

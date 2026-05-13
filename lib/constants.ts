@@ -64,6 +64,35 @@ export const CRATE_COLORS = [
   "#c96a4a", "#b85838", "#d87e5e",
 ] as const;
 
+type PatternStyle = { backgroundImage?: string; backgroundSize?: string };
+
+export function getPatternStyle(pattern: string): PatternStyle {
+  const pct = encodeURIComponent;
+  const svg = (w: number, h: number, content: string): PatternStyle => ({
+    backgroundImage: `url("data:image/svg+xml,${pct(`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>${content}</svg>`)}")`,
+    backgroundSize:  `${w}px ${h}px`,
+  });
+  switch (pattern) {
+    case "dots":     return svg(8,  8,  `<circle cx='4' cy='4' r='1.2' fill='white' fill-opacity='0.20'/>`);
+    case "lines":    return svg(8,  6,  `<line x1='0' y1='0.5' x2='8' y2='0.5' stroke='white' stroke-opacity='0.16' stroke-width='1'/>`);
+    case "diagonal": return svg(8,  8,  `<line x1='0' y1='8' x2='8' y2='0' stroke='white' stroke-opacity='0.16' stroke-width='1'/>`);
+    case "grid":     return svg(8,  8,  `<path d='M 8 0 L 0 0 0 8' fill='none' stroke='white' stroke-opacity='0.13' stroke-width='0.5'/>`);
+    case "rings":    return svg(16, 16, `<circle cx='8' cy='8' r='5.5' fill='none' stroke='white' stroke-opacity='0.17' stroke-width='0.8'/>`);
+    case "cross":    return svg(12, 12, `<path d='M 6 2 L 6 10 M 2 6 L 10 6' stroke='white' stroke-opacity='0.17' stroke-width='0.8' stroke-linecap='round'/>`);
+    default:         return {};
+  }
+}
+
+export const CRATE_PATTERNS = [
+  { id: "",          label: "None"     },
+  { id: "dots",      label: "Dots"     },
+  { id: "lines",     label: "Lines"    },
+  { id: "diagonal",  label: "Diagonal" },
+  { id: "grid",      label: "Grid"     },
+  { id: "rings",     label: "Rings"    },
+  { id: "cross",     label: "Cross"    },
+] as const;
+
 export const EMPTY_TRACK_FORM: TrackFormState = {
   title:    "",
   artist:   "",

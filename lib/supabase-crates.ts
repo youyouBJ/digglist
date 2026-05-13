@@ -10,6 +10,7 @@ type CrateRow = {
   name: string;
   description: string;
   color: string;
+  pattern: string;
   parent_id: string | null;
   position: number;
   created_at: string;
@@ -22,6 +23,7 @@ function toCrate(row: CrateRow): Crate {
     name:        row.name,
     description: row.description,
     color:       row.color,
+    pattern:     row.pattern ?? "",
     parentId:    row.parent_id,
     position:    row.position,
     createdAt:   row.created_at,
@@ -70,6 +72,7 @@ export async function createCrate(input: {
   name: string;
   description?: string;
   color?: string;
+  pattern?: string;
   parentId?: string | null;
   position?: number;
 }): Promise<Crate> {
@@ -83,6 +86,7 @@ export async function createCrate(input: {
       name:        input.name,
       description: input.description ?? "",
       color:       input.color ?? "#3d9e87",
+      pattern:     input.pattern ?? "",
       parent_id:   input.parentId ?? null,
       position:    input.position ?? 0,
     })
@@ -98,6 +102,7 @@ export async function updateCrate(
     name?: string;
     description?: string;
     color?: string;
+    pattern?: string;
     parentId?: string | null;
     position?: number;
   }
@@ -106,6 +111,7 @@ export async function updateCrate(
   if (patch.name        !== undefined) update.name        = patch.name;
   if (patch.description !== undefined) update.description = patch.description;
   if (patch.color       !== undefined) update.color       = patch.color;
+  if (patch.pattern     !== undefined) update.pattern     = patch.pattern;
   if (patch.parentId    !== undefined) update.parent_id   = patch.parentId;
   if (patch.position    !== undefined) update.position    = patch.position;
 

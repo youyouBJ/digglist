@@ -6,6 +6,7 @@ import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getSets } from "@/lib/supabase-sets";
 import type { MixSetWithCount } from "@/lib/types";
 import { getCrates, getCrateTrackIds, getTrackCrateMap, type Crate, type CrateWithCount } from "@/lib/supabase-crates";
+import { getPatternStyle } from "@/lib/constants";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
@@ -245,8 +246,16 @@ export default function IdsPage() {
                     {isSub && (
                       <span className="text-[9px] mr-0.5" style={{ color: "rgba(201,162,74,0.4)" }}>↳</span>
                     )}
-                    <span className="w-[5px] h-[5px] rounded-full shrink-0 mr-1"
-                      style={{ background: c.color, opacity: active ? 1 : 0.5 }} />
+                    <span
+                      className="shrink-0 mr-1 rounded-[2px]"
+                      style={{
+                        width:           14,
+                        height:          9,
+                        backgroundColor: c.color,
+                        ...getPatternStyle(c.pattern),
+                        opacity:         active ? 1 : 0.55,
+                      }}
+                    />
                     {c.name}
                     <span className="text-[10px] ml-1" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
                       {count}

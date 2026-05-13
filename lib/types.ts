@@ -55,6 +55,7 @@ export type Crate = {
   name: string;
   description: string;
   color: string;
+  pattern: string;
   parentId: string | null;
   position: number;
   createdAt: string;

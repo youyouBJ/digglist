@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCrates, deleteCrate, type CrateWithCount } from "@/lib/supabase-crates";
+import { getPatternStyle } from "@/lib/constants";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
 import Header from "@/app/components/Header";
@@ -156,6 +157,16 @@ function CrateRow({
         className="flex items-center gap-3 px-5 sm:px-8 py-[14px] cursor-pointer transition-opacity active:opacity-70"
         style={{ borderLeft: `3px solid ${crate.color}` }}
       >
+        {/* Color + pattern swatch */}
+        <div
+          className="shrink-0 rounded-[5px]"
+          style={{
+            width:           32,
+            height:          32,
+            backgroundColor: crate.color,
+            ...getPatternStyle(crate.pattern),
+          }}
+        />
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-medium leading-[1.2]" style={{ color: "var(--t1)" }}>
             {crate.name}

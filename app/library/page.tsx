@@ -6,7 +6,7 @@ import { getTracks, deleteTrack, type Track } from "@/lib/supabase-tracks";
 import { getSets } from "@/lib/supabase-sets";
 import type { MixSetWithCount } from "@/lib/types";
 import { getCrates, getCrateTrackIds, getTrackCrateMap, type Crate, type CrateWithCount } from "@/lib/supabase-crates";
-import { PLATFORMS } from "@/lib/constants";
+import { PLATFORMS, getPatternStyle } from "@/lib/constants";
 import { formatTimestamp } from "@/lib/timestamp";
 import { useRequireAuth } from "@/lib/hooks/use-require-auth";
 import { PageLoader } from "@/app/components/ui";
@@ -314,8 +314,16 @@ export default function LibraryPage() {
                   {isSub && (
                     <span className="text-[9px] mr-0.5" style={{ color: "var(--t4)" }}>↳</span>
                   )}
-                  <span className="w-[5px] h-[5px] rounded-full shrink-0 mr-1"
-                    style={{ background: c.color, opacity: active ? 1 : 0.5 }} />
+                  <span
+                    className="shrink-0 mr-1 rounded-[2px]"
+                    style={{
+                      width:           14,
+                      height:          9,
+                      backgroundColor: c.color,
+                      ...getPatternStyle(c.pattern),
+                      opacity:         active ? 1 : 0.55,
+                    }}
+                  />
                   {c.name}
                   <span className="text-[10px] ml-1" style={{ opacity: 0.5, fontFeatureSettings: '"tnum"' }}>
                     {count}
