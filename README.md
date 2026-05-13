@@ -133,6 +133,10 @@ npm run lint     # ESLint
 - Discogs : scraping og:title → split artiste/titre
 - Générique : og:title + og:description + og:image
 
+### Navigation
+- BottomNav "+" button opens a creation hub: **Discover** (Add Track, Log ID) + **Organise** (New Set, New Crate)
+- Crate color dots shown inline next to track/ID titles in Library and IDs for instant visual context
+
 ### Auth
 - Email/password via Supabase Auth
 - `useRequireAuth` hook — redirige vers `/login` si non connecté

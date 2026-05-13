@@ -70,23 +70,24 @@ function DiscIcon() {
   );
 }
 
-function PlayIcon() {
+function SetSheetIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5}>
-      <polygon points="5,3 19,12 5,21" />
+      <rect x="3"    y="14" width="2.5" height="6"  rx="1.25" />
+      <rect x="8.5"  y="9"  width="2.5" height="11" rx="1.25" />
+      <rect x="14"   y="5"  width="2.5" height="15" rx="1.25" />
+      <rect x="19.5" y="11" width="2.5" height="8"  rx="1.25" />
     </svg>
   );
 }
 
-function LinkIcon() {
+function CrateSheetIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round"
-        d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
     </svg>
   );
 }
@@ -167,17 +168,16 @@ export default function BottomNav() {
             <div className="mx-auto mt-3 mb-4 w-9 h-1 rounded-full"
               style={{ background: "var(--rule3)" }} />
 
-            <p className="px-5 mb-3 text-[10px] tracking-[0.12em] uppercase"
-              style={{ color: "var(--t3)" }}>
-              What did you find?
+            {/* ── Discover ── */}
+            <p className="px-5 mb-2 text-[10px] tracking-[0.12em] uppercase"
+              style={{ color: "var(--t4)" }}>
+              Discover
             </p>
-
-            <div className="px-4 pb-6 flex flex-col gap-2">
-              {/* Add a track */}
+            <div className="px-4 flex flex-col gap-2">
               <Link
                 href="/quick-add"
                 onClick={() => setShowAdd(false)}
-                className="flex items-center gap-3 rounded-xl p-3.5"
+                className="flex items-center gap-3 rounded-xl p-3.5 transition-opacity active:opacity-70"
                 style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -191,15 +191,11 @@ export default function BottomNav() {
                 <span style={{ color: "var(--t4)" }}><ChevronRight /></span>
               </Link>
 
-              {/* Log an ID needed */}
               <Link
                 href="/ids/new"
                 onClick={() => setShowAdd(false)}
-                className="flex items-center gap-3 rounded-xl p-3.5"
-                style={{
-                  background: "var(--amber-soft)",
-                  border: "0.5px solid var(--amber-rule)",
-                }}
+                className="flex items-center gap-3 rounded-xl p-3.5 transition-opacity active:opacity-70"
+                style={{ background: "var(--amber-soft)", border: "0.5px solid var(--amber-rule)" }}
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: "rgba(201,162,74,0.12)", color: "var(--amber)" }}>
@@ -210,6 +206,48 @@ export default function BottomNav() {
                   <div className="text-[11px] mt-0.5" style={{ color: "rgba(201,162,74,0.55)" }}>Unknown track, where you heard it</div>
                 </div>
                 <span style={{ color: "var(--amber)" }}><ChevronRight /></span>
+              </Link>
+            </div>
+
+            {/* ── Organise ── */}
+            <div className="mx-4 mt-3 mb-2" style={{ borderTop: "0.5px solid var(--rule2)" }} />
+            <p className="px-5 mb-2 text-[10px] tracking-[0.12em] uppercase"
+              style={{ color: "var(--t4)" }}>
+              Organise
+            </p>
+            <div className="px-4 pb-6 flex flex-col gap-2">
+              <Link
+                href="/sets/new"
+                onClick={() => setShowAdd(false)}
+                className="flex items-center gap-3 rounded-xl p-3 transition-opacity active:opacity-70"
+                style={{ background: "rgba(61,158,135,0.08)", border: "0.5px solid rgba(61,158,135,0.20)" }}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(61,158,135,0.12)", color: "var(--teal)" }}>
+                  <SetSheetIcon />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium" style={{ color: "var(--teal)" }}>New Set</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: "rgba(61,158,135,0.55)" }}>Log a mix or set you listened to</div>
+                </div>
+                <span style={{ color: "rgba(61,158,135,0.45)" }}><ChevronRight /></span>
+              </Link>
+
+              <Link
+                href="/crates/new"
+                onClick={() => setShowAdd(false)}
+                className="flex items-center gap-3 rounded-xl p-3 transition-opacity active:opacity-70"
+                style={{ background: "var(--bg3)", border: "0.5px solid var(--rule2)" }}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "var(--bg4)", color: "var(--t3)" }}>
+                  <CrateSheetIcon />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium" style={{ color: "var(--t2)" }}>New Crate</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: "var(--t4)" }}>Create a new folder for your tracks</div>
+                </div>
+                <span style={{ color: "var(--t4)" }}><ChevronRight /></span>
               </Link>
             </div>
           </div>

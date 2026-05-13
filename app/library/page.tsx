@@ -387,7 +387,6 @@ function TrackRow({
   const metaTags   = [track.sourcePlatform, track.genre, track.mood].filter(Boolean);
   const hasRating  = track.rating !== null && track.rating > 0;
   const hasCrates  = trackCrates.length > 0;
-  const hasExtras  = hasRating || hasCrates;
   const tsStart    = track.sourceTimestamp;
   const tsEnd      = track.timestampEnd;
   const hasTs      = tsStart !== null && tsStart !== undefined;
@@ -407,10 +406,25 @@ function TrackRow({
           <p className="text-[11px] mb-[2px] truncate" style={{ color: "var(--t3)" }}>
             {track.artist}
           </p>
-          <p className="text-[14px] font-medium tracking-[-0.01em] leading-[1.25] truncate mb-[7px]"
-            style={{ color: "var(--t1)" }}>
-            {track.title || "Untitled"}
-          </p>
+          <div className="flex items-center gap-[6px] mb-[7px] min-w-0">
+            <span className="text-[14px] font-medium tracking-[-0.01em] leading-[1.25] truncate"
+              style={{ color: "var(--t1)" }}>
+              {track.title || "Untitled"}
+            </span>
+            {hasCrates && (
+              <span className="flex items-center gap-[3px] shrink-0">
+                {trackCrates.slice(0, 2).map((c) => (
+                  <span key={c.id} className="w-[4.5px] h-[4.5px] rounded-full"
+                    style={{ background: c.color }} title={c.name} />
+                ))}
+                {trackCrates.length > 2 && (
+                  <span className="text-[9px] leading-none" style={{ color: "var(--t4)" }}>
+                    +{trackCrates.length - 2}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
           {metaTags.length > 0 && (
             <p className="text-[11px] leading-none mb-[5px]" style={{ color: "var(--t3)" }}>
               {metaTags.map((tag, i) => (
@@ -439,27 +453,12 @@ function TrackRow({
               <span className="truncate">{setTitle}</span>
             </p>
           )}
-          {hasExtras && (
-            <div className="flex items-center gap-[7px] mt-[6px]">
-              {hasRating && (
-                <span className="text-[10px] leading-none tracking-[0.06em]"
-                  style={{ color: "var(--amber)" }}>
-                  {"★".repeat(track.rating!)}
-                </span>
-              )}
-              {hasCrates && (
-                <span className="flex items-center gap-[4px]">
-                  {trackCrates.slice(0, 3).map((c) => (
-                    <span key={c.id} className="w-[5px] h-[5px] rounded-full shrink-0"
-                      style={{ background: c.color }} title={c.name} />
-                  ))}
-                  {trackCrates.length > 3 && (
-                    <span className="text-[9px] leading-none" style={{ color: "var(--t4)" }}>
-                      +{trackCrates.length - 3}
-                    </span>
-                  )}
-                </span>
-              )}
+          {hasRating && (
+            <div className="flex items-center mt-[6px]">
+              <span className="text-[10px] leading-none tracking-[0.06em]"
+                style={{ color: "var(--amber)" }}>
+                {"★".repeat(track.rating!)}
+              </span>
             </div>
           )}
         </div>

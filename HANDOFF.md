@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
 
 ---
 
@@ -33,6 +33,13 @@ Ce qui est fait :
 - `PLATFORMS` : `"Spotify"` ajouté entre SoundCloud et Bandcamp
 - `TrackEmbed` + `SetEmbed` : iframe Spotify (152px pour track/episode, 352px pour album/playlist)
 - `PlatformLinkCard` + link card SetEmbed : Spotify (`#1DB954`, badge `sp`) pour les pages artiste sans embed
+
+**Sprint UX Hub + Library lisibilité — terminé ✅**
+
+Ce qui est fait :
+- `BottomNav.tsx` : Add sheet étendu à 4 actions — section "Discover" (Add Track, Log ID) + section "Organise" (New Set teal, New Crate neutre) avec icônes dédiées, hiérarchie visuelle claire, design mobile-first cohérent
+- `library/page.tsx` TrackRow : pastilles de crates inline avec le titre (max 2 + "+N"), title= hover desktop, retrait des dots en bas du row (plus redondant)
+- `ids/page.tsx` IdRow : même traitement inline-title + simplification extras (rating seul en bas)
 
 **Sprint Sets Enrichment — terminé ✅**
 
@@ -98,12 +105,13 @@ Choix suivants :
 | Navigation mobile Library ↔ IDs ↔ Crates | ✅ |
 | Search dans Library et IDs | ✅ |
 | Filtre par crate dans Library et IDs | ✅ |
-| BottomNav : Add sheet (2 options claires) | ✅ |
+| BottomNav : Add sheet (4 options — Discover + Organise) | ✅ |
 | Sets — colonnes artist, party, set_date | ✅ |
 | New Set — form enrichi avec moments en draft inline | ✅ |
 | Edit Set — form set info + gestion moments (add/edit/delete) via bottom sheet | ✅ |
 | Sets list — affiche artist + party | ✅ |
 | Sets detail — hero avec artist (kicker) + party + setDate | ✅ |
+| Library/IDs — pastilles crates inline titre (max 2 + "+N") | ✅ |
 
 ---
 
