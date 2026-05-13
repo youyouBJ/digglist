@@ -1,6 +1,6 @@
 # Roadmap Digglist
-> Dernière mise à jour : 2026-05-12
-> État : Phase 1 Stabilisation **complète**. Sprint UX à lancer.
+> Dernière mise à jour : 2026-05-13
+> État : Phase 1 ✅, Sprint 0 ✅, 2A ✅, 2B partiel ✅, 3A ✅, Bugfix-Media ✅, Sets-Enrichment ✅.
 
 ---
 
@@ -8,11 +8,12 @@
 
 | Sprint | Nom | Sessions est. | État |
 |--------|-----|---------------|------|
-| 0 | UX Quick Wins | 1–2 | **À lancer** |
+| 0 | UX Quick Wins | 1–2 | ✅ |
 | 2A | Sets — Infrastructure | 2–3 | ✅ |
-| 2B | Sets — Flow + SC Timestamp | 2–3 | À faire |
-| 3A | Rich Media — Bandcamp + TikTok preview | 1 | À faire |
-| 3B | Rich Media — Spotify + Apple Music | 2–3 | À faire |
+| 2B | Sets — Flow (sans FEAT-SC-TS) | 2–3 | ✅ (SC timestamp À faire) |
+| Sets+ | Sets — Enrichment (artist, party, setDate, moments) | 1 | ✅ |
+| 3A | Rich Media — Bandcamp + TikTok preview | 1 | ✅ |
+| 3B | Rich Media — Spotify + Apple Music | 2–3 | Spotify ✅ / Apple Music À faire |
 | 4 | Smart Metadata / AI | 2 | À faire |
 | 5 | Crates Evolution | 1–2 | À faire |
 | 6 | Polish V1 | 2–3 | À faire |
@@ -275,11 +276,12 @@ create policy "Public read by share_token — crates"
 | Phase | Nom | État |
 |-------|-----|------|
 | 1 | Stabilisation Beta | ✅ Complète |
-| Sprint 0 | UX Quick Wins | **À lancer** |
+| Sprint 0 | UX Quick Wins | ✅ |
 | 2A | Sets System — Infrastructure | ✅ |
-| 2B | Sets System — Flow + SC Timestamp | À faire |
-| 3A | Rich Media — Bandcamp + TikTok | À faire |
-| 3B | Rich Media — Spotify + Apple Music | À faire |
+| 2B | Sets System — Flow (sans SC timestamp) | ✅ |
+| Sets+ | Sets Enrichment — artist, party, setDate, moments | ✅ |
+| 3A | Rich Media — Bandcamp + TikTok | ✅ |
+| 3B | Rich Media — Spotify + Apple Music | Spotify ✅ / Apple Music À faire |
 | 4 | Smart Metadata / AI | À faire |
 | 5 | Crates Evolution | À faire |
 | 6 | Polish V1 | À faire |

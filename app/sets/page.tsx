@@ -149,8 +149,13 @@ function SetRow({
           <p className="text-[14px] font-medium leading-[1.2] truncate" style={{ color: "var(--t1)" }}>
             {set.title || "Untitled set"}
           </p>
-          <p className="text-[11px] mt-[3px]" style={{ color: "var(--t3)" }}>
-            {[set.platform, formatDate(set.createdAt)].filter(Boolean).join(" · ")}
+          {set.artist && (
+            <p className="text-[12px] mt-[2px] truncate" style={{ color: "var(--t2)" }}>
+              {set.artist}
+            </p>
+          )}
+          <p className="text-[11px] mt-[2px]" style={{ color: "var(--t3)" }}>
+            {[set.party || null, set.platform, formatDate(set.setDate ?? set.createdAt)].filter(Boolean).join(" · ")}
           </p>
         </div>
 

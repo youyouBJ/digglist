@@ -8,6 +8,9 @@ type SetRow = {
   id:         string;
   user_id:    string;
   title:      string;
+  artist:     string;
+  party:      string;
+  set_date:   string | null;
   source_url: string | null;
   platform:   string | null;
   cover_url:  string | null;
@@ -20,6 +23,9 @@ function toMixSet(row: SetRow): MixSet {
     id:        row.id,
     userId:    row.user_id,
     title:     row.title,
+    artist:    row.artist,
+    party:     row.party,
+    setDate:   row.set_date,
     sourceUrl: row.source_url,
     platform:  row.platform,
     coverUrl:  row.cover_url,
@@ -64,6 +70,9 @@ export async function getSetById(id: string): Promise<MixSet | null> {
 
 export async function createSet(input: {
   title:     string;
+  artist:    string;
+  party:     string;
+  setDate:   string | null;
   sourceUrl: string | null;
   platform:  string | null;
   coverUrl:  string | null;
@@ -77,6 +86,9 @@ export async function createSet(input: {
     .insert({
       user_id:    user.id,
       title:      input.title,
+      artist:     input.artist,
+      party:      input.party,
+      set_date:   input.setDate,
       source_url: input.sourceUrl,
       platform:   input.platform,
       cover_url:  input.coverUrl,
@@ -93,6 +105,9 @@ export async function updateSet(
   id: string,
   patch: Partial<{
     title:     string;
+    artist:    string;
+    party:     string;
+    setDate:   string | null;
     sourceUrl: string | null;
     platform:  string | null;
     coverUrl:  string | null;
@@ -101,6 +116,9 @@ export async function updateSet(
 ): Promise<void> {
   const update: Partial<Record<string, unknown>> = {};
   if (patch.title     !== undefined) update.title      = patch.title;
+  if (patch.artist    !== undefined) update.artist     = patch.artist;
+  if (patch.party     !== undefined) update.party      = patch.party;
+  if (patch.setDate   !== undefined) update.set_date   = patch.setDate;
   if (patch.sourceUrl !== undefined) update.source_url = patch.sourceUrl;
   if (patch.platform  !== undefined) update.platform   = patch.platform;
   if (patch.coverUrl  !== undefined) update.cover_url  = patch.coverUrl;

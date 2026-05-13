@@ -148,10 +148,10 @@ export default function SetDetailPage() {
           </div>
         )}
         <div className="flex-1 min-w-0 pt-[2px]">
-          {set.platform && (
+          {(set.artist || set.platform) && (
             <p className="text-[11px] tracking-[0.10em] uppercase mb-1"
               style={{ color: "var(--teal)" }}>
-              {set.platform}
+              {set.artist || set.platform}
             </p>
           )}
           <h2 className="text-[20px] font-medium tracking-[-0.02em] leading-[1.2] mb-1"
@@ -159,8 +159,11 @@ export default function SetDetailPage() {
             {set.title || "Untitled set"}
           </h2>
           <p className="text-[11px]" style={{ color: "var(--t3)" }}>
-            {formatDate(set.createdAt)}
-            {moments.length > 0 && ` · ${moments.length} ${moments.length === 1 ? "moment" : "moments"}`}
+            {[
+              set.party || null,
+              formatDate(set.setDate ?? set.createdAt),
+              moments.length > 0 ? `${moments.length} ${moments.length === 1 ? "moment" : "moments"}` : null,
+            ].filter(Boolean).join(" · ")}
           </p>
         </div>
       </div>

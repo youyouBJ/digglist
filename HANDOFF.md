@@ -18,7 +18,7 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B ✅ 3A ✅ Bugfix-Media ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅. Prochain : Sprint 3B (Apple Music) ou FEAT-SC-TS.**
 
 ---
 
@@ -33,6 +33,18 @@ Ce qui est fait :
 - `PLATFORMS` : `"Spotify"` ajouté entre SoundCloud et Bandcamp
 - `TrackEmbed` + `SetEmbed` : iframe Spotify (152px pour track/episode, 352px pour album/playlist)
 - `PlatformLinkCard` + link card SetEmbed : Spotify (`#1DB954`, badge `sp`) pour les pages artiste sans embed
+
+**Sprint Sets Enrichment — terminé ✅**
+
+Ce qui est fait :
+- Migration SQL : colonnes `artist`, `party`, `set_date` ajoutées à la table `sets`
+- `lib/types.ts` : `MixSet` étendu avec `artist`, `party`, `setDate`
+- `lib/supabase-sets.ts` : `SetRow`, `toMixSet`, `createSet`, `updateSet` mis à jour ; `createSet` passe maintenant `user_id` (fix RLS critique)
+- `app/sets/new/page.tsx` : rewritten — nouveaux champs Artist/DJ, Party/event, Date (input natif) + gestion de moments en draft inline avant save
+- `app/sets/[id]/edit/page.tsx` : rewritten — form set info + section moments avec Edit/Delete/Add via bottom sheet
+- `app/sets/[id]/page.tsx` : hero affiche `set.artist` (kicker teal) + `set.party` + `set.setDate` dans le sous-titre
+- `app/sets/page.tsx` : SetRow affiche `set.artist` sous le titre, `set.party` dans la ligne info
+- Timestamps (sourceTimestamp/timestampEnd) retirés de Add Track et Log an ID — réservés aux moments via "Log from set"
 
 **Sprint 3A — Rich Media terminé ✅**
 
@@ -87,6 +99,11 @@ Choix suivants :
 | Search dans Library et IDs | ✅ |
 | Filtre par crate dans Library et IDs | ✅ |
 | BottomNav : Add sheet (2 options claires) | ✅ |
+| Sets — colonnes artist, party, set_date | ✅ |
+| New Set — form enrichi avec moments en draft inline | ✅ |
+| Edit Set — form set info + gestion moments (add/edit/delete) via bottom sheet | ✅ |
+| Sets list — affiche artist + party | ✅ |
+| Sets detail — hero avec artist (kicker) + party + setDate | ✅ |
 
 ---
 
@@ -128,9 +145,9 @@ app/ids/page.tsx          → IDs + IdRow
 app/add-track/page.tsx    → Form complet avec videoAuthor
 app/crates/[id]/page.tsx  → Utilise correctement record_type (plus status)
 app/sets/page.tsx         → Liste des sets
-app/sets/new/page.tsx     → Créer un set (URL + fetch metadata)
-app/sets/[id]/page.tsx    → Détail set + moments + sheet "Log moment"
-app/sets/[id]/edit/page.tsx → Éditer titre + notes d'un set
+app/sets/new/page.tsx     → Créer un set (URL + fetch metadata + moments en draft inline)
+app/sets/[id]/page.tsx    → Détail set + moments + sheet "Log moment" + hero enrichi (artist, party, setDate)
+app/sets/[id]/edit/page.tsx → Éditer infos set (incl. artist, party, setDate) + gestion moments (add/edit/delete via bottom sheet)
 ```
 
 ---

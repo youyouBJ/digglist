@@ -81,6 +81,11 @@ npm run lint     # ESLint
 /crates/[id]            → Détail crate : tracks filtrés
 /crates/[id]/edit       → Éditer la crate
 
+/sets                   → Liste des sets (titre, artiste, party, date)
+/sets/new               → Créer un set + moments en draft inline
+/sets/[id]              → Détail set : embed, moments (tracks + IDs), sheet "Log from set"
+/sets/[id]/edit         → Éditer infos set + gérer moments existants
+
 /api/fetch-metadata     → Route API serveur : oEmbed YouTube/SoundCloud/TikTok + HTML scraping
 ```
 
@@ -100,10 +105,18 @@ npm run lint     # ESLint
 - `/ids/new` — form complet : auteur vidéo, timestamp début/fin, Track ID hint, artiste connu, notes, rating, crates
 - Les IDs n'apparaissent **jamais** dans Library
 
+### Sets
+- Créer un set avec titre, artiste/DJ, party/event, date, URL source, cover, notes
+- Ajouter des moments (tracks ou IDs) en draft avant de sauvegarder (New Set)
+- Gérer les moments existants : add/edit/delete via bottom sheet (Edit Set)
+- "Log from set" — sheet inline pour logger un moment depuis le détail du set
+- Moments liés dans la table `tracks` via `set_id`, triés par timestamp
+
 ### Embeds
 - YouTube : iframe avec `?start=timestamp` si timestamp défini
 - SoundCloud : widget officiel, hash fragment strippé (fix embed cassé), lien fallback toujours visible
-- TikTok/Instagram : pas d'embed — bouton "Open source"
+- Spotify : iframe embed (track/episode 152px, album/playlist 352px) ; link card pour les pages artiste
+- TikTok/Instagram/Bandcamp : pas d'iframe — link card "Open on …"
 
 ### Crates
 - Création libre, 24 couleurs (8 familles × 3 nuances)
@@ -131,7 +144,8 @@ npm run lint     # ESLint
 
 **Version : Beta stable (mai 2026)**
 
-L'app est fonctionnelle end-to-end. Auth, tracks, IDs, crates, embeds — tout fonctionne.
+L'app est fonctionnelle end-to-end. Auth, tracks, IDs, crates, sets, embeds — tout fonctionne.
 Les status (To listen / To buy / To play / Inspiration) existent en DB mais sont **invisibles dans l'UI** — l'organisation se fait via crates.
+Les sets supportent maintenant artist, party et set_date, avec gestion complète des moments (add/edit/delete).
 
 Voir `ROADMAP.md` pour ce qui reste à faire.

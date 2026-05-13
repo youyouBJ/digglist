@@ -24,6 +24,9 @@ export type MixSet = {
   id: string;
   userId: string;
   title: string;
+  artist: string;
+  party: string;
+  setDate: string | null;
   sourceUrl: string | null;
   platform: string | null;
   coverUrl: string | null;
