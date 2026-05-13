@@ -18,11 +18,11 @@ Repo local : `/Users/ybj/Desktop/claude digglist/digglist/`
 
 ## État actuel — Mai 2026
 
-**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
+**Beta stable. Sprints 0 ✅ 2A ✅ 2B (partiel) ✅ 3A ✅ Bugfix-Media ✅ Sets-Enrichment ✅ UX-Hub ✅ Crates-UX ✅ Crates-Patterns ✅ Desktop-Nav ✅ Sprint4-Prep ✅ AI-INFRA-01 ✅ AI-META-ADD ✅ Bugfix-AddTrack ✅. Prochain : AI-META-IDS (ids/new) ou Sprint 3B ou FEAT-SC-TS.**
 
 ---
 
-## Prochaine tâche recommandée : Sprint 3B ou FEAT-SC-TS
+## Prochaine tâche recommandée : AI-META-IDS ou Sprint 3B ou FEAT-SC-TS
 
 **Bugfix Media Metadata — terminé ✅**
 
@@ -91,6 +91,15 @@ Ce qui est fait dans `app/add-track/page.tsx` :
 - Section AI dans le form (entre Source et Details) : visible si au moins un champ rempli
 - Bouton `✦ AI suggestions` → loading `"Analyzing…"` → panel ou erreur inline
 - Composant `AiPanel` : header confidence, warning amber si < 50%, rows Apply par champ, résumé italique, Apply all + Dismiss
+
+**Bugfix Add Track — terminé ✅ (2026-05-13)**
+
+Bugs remontés du test iPhone réels, tous corrigés :
+- `fetchSoundCloud` : `User-Agent` manquant sur l'appel oEmbed → ajouté (`BROWSER_UA`)
+- `fetchTikTok` : ajout des headers `Referer: https://www.tiktok.com/` + `Accept: application/json`
+- `fetchInstagram` : scraping bloqué par login wall → fallback sur l'extraction du username depuis l'URL
+- Bouton `✦ AI suggestions` : toujours visible (plus caché derrière `hasAiContext`), style teal pour la visibilité, désactivé si form vide
+- `FormSection` : prop `collapsible` ajoutée — Details / Rating / Notes / Crates ouverts par défaut avec chevron pour replier
 
 **Prochaine étape : AI-META-IDS** — même intégration dans `ids/new/page.tsx`
 
